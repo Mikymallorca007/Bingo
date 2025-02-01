@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Automático</title>
+    <style>
+        body {
+            font-family: 'Verdana', sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        .contenedor {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        #bola-actual {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background-color: yellow;
+            color: black;
+            font-size: 72px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            transform: translateX(-5cm); /* Mover la bola amarilla 5cm a la izquierda */
+        }
+        #ultimas-bolas {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .bola-pequena {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: blue;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #zona-bolas {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 8px;
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            transform: translateX(-1cm); /* Ajuste para mover la tabla de bolas */
+        }
+        .bola {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        .bola:hover {
+            transform: scale(1.2);
+        }
+        button {
+            margin: 10px;
+            font-size: 18px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #ff4e50;
+            color: white;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #fc913a;
+        }
+        .verificacion div {
+            display: inline-block;
+            margin: 20px;
+            text-align: center;
+        }
+        .verificacion img {
+            width: 50px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            border-radius: 50%;
+            padding: 10px;
+            transition: transform 0.2s;
+        }
+        .verificacion img:hover {
+            transform: scale(1.1);
+        }
+        .verificacion p {
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+        }
+        .deshabilitado {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bingo Automático</h1>
+    <div>
+        <button onclick="sacarBola()" id="sacarBtn">Sacar Bola</button>
+        <button onclick="nuevaPartida()">Nueva Partida</button>
+        <button onclick="iniciarAutomatico()">Inicio Automático</button>
+        <button onclick="pausarJuego()" id="pausaBtn">Pausa Juego</button> <!-- Botón de pausa -->
+    </div>
+    <div class="contenedor">
+        <div id="bola-actual">--</div>
+        <div id="zona-bolas" style="transform: translateX(-1cm);"></div>
+        <div id="ultimas-bolas"></div>
+    </div>
+    <div class="verificacion">
+        <div>
+            <img id="linea-correcta" src="pulgar_arriba.png" onclick="confirmarLinea(true)" alt="Línea correcta">
+            <p>Línea Correcta</p>
+        </div>
+        <div>
+            <img id="linea-incorrecta" src="pulgar_abajo.png" onclick="confirmarLinea(false)" alt="Línea incorrecta">
+            <p>Línea Incorrecta</p>
+        </div>
+        <div>
+            <img id="bingo-correcto" src="pulgar_arriba.png" onclick="confirmarBingo(true)" alt="Bingo correcto" style="background-color: #4caf50;">
+            <p>Bingo Correcto</p>
+        </div>
+        <div>
+            <img id="bingo-incorrecto" src="pulgar_abajo.png" onclick="confirmarBingo(false)" alt="Bingo incorrecto" style="background-color: #f44336;">
+            <p>Bingo Incorrecto</p>
+        </div>
+    </div>
+    <script>
+        let bolas = Array.from({ length: 80 }, (_, i) => i + 1);
+        let bolasAnteriores = [];
+        const speech = window.speechSynthesis;
+        let lineaConfirmada = false;
+        let bingoConfirmado = false;
+        let intervaloAutomatico;
+        let automaticoActivo = false;
+        let juegoPausado = false; // Variable para controlar si el juego está en pausa
+        let estadoJuego = null; // Variable para guardar el estado del juego cuando se pausa
+
+        function hablar(texto) {
+            let utterance = new SpeechSynthesisUtterance(texto);
+            utterance.lang = "es-ES";
+            speech.speak(utterance);
+        }
+
+        function sacarBola() {
+            if (bolas.length === 0 || juegoPausado) return;
+            let indice = Math.floor(Math.random() * bolas.length);
+            let bola = bolas.splice(indice, 1)[0];
+            bolasAnteriores.unshift(bola);
+            if (bolasAnteriores.length > 5) bolasAnteriores.pop();
+            document.getElementById("bola-actual").innerText = bola;
+            actualizarUltimasBolas();
+            document.getElementById(`bola-${bola}`).style.backgroundColor = "#ff4e50";
+            document.getElementById(`bola-${bola}`).style.color = "white";
+            hablar(`${bola}`);  // Solo el número de la bola, sin la palabra "número"
+        }
+
+        function actualizarUltimasBolas() {
+            let contenedor = document.getElementById("ultimas-bolas");
+            contenedor.innerHTML = "";
+            bolasAnteriores.forEach(num => {
+                let bolaElement = document.createElement("div");
+                bolaElement.classList.add("bola-pequena");
+                bolaElement.innerText = num;
+                contenedor.appendChild(bolaElement);
+            });
+        }
+
+        function nuevaPartida() {
+            bolas = Array.from({ length: 80 }, (_, i) => i + 1);
+            bolasAnteriores = [];
+            document.getElementById("bola-actual").innerText = "--";
+            document.getElementById("ultimas-bolas").innerHTML = "";
+            // Reiniciar el estado de la tabla de bolas sin duplicarla
+            limpiarBolas();
+            // Habilitar los botones de Línea y Bingo para la nueva partida
+            document.getElementById("linea-correcta").classList.remove("deshabilitado");
+            document.getElementById("linea-incorrecta").classList.remove("deshabilitado");
+            document.getElementById("bingo-correcto").classList.remove("deshabilitado");
+            document.getElementById("bingo-incorrecto").classList.remove("deshabilitado");
+            lineaConfirmada = false;
+            bingoConfirmado = false;
+            detenerAutomatico(); // Detener si estaba en modo automático
+        }
+
+        function limpiarBolas() {
+            // Limpiar la tabla de bolas sin generar de nuevo los elementos
+            let zonaBolas = document.getElementById("zona-bolas");
+            zonaBolas.innerHTML = "";
+            for (let i = 1; i <= 80; i++) {
+                let bola = document.createElement("div");
+                bola.classList.add("bola");
+                bola.id = `bola-${i}`;
+                bola.innerText = i;
+                zonaBolas.appendChild(bola);
+            }
+        }
+
+        function iniciarAutomatico() {
+            if (automaticoActivo || juegoPausado) return;
+            automaticoActivo = true;
+            // Deshabilitar el botón de Inicio Automático mientras está en proceso
+            document.querySelector('button[onclick="iniciarAutomatico()"]').classList.add('deshabilitado');
+            
+            intervaloAutomatico = setInterval(() => {
+                if (bolas.length === 0) {
+                    detenerAutomatico(); // Detener cuando ya no haya más bolas
+                    hablar("No hay más bolas, la partida se ha terminado.");
+                    return;
+                }
+                sacarBola();
+            }, 3000); // Sacar una bola cada 3 segundos (ajusté el tiempo)
+        }
+
+        function detenerAutomatico() {
+            clearInterval(intervaloAutomatico); // Detener el intervalo
+            document.querySelector('button[onclick="iniciarAutomatico()"]').classList.remove('deshabilitado');
+            automaticoActivo = false;
+        }
+
+        function pausarJuego() {
+            juegoPausado = !juegoPausado;
+            if (juegoPausado) {
+                // Guardar el estado del juego antes de pausar
+                estadoJuego = {
+                    bolasRestantes: [...bolas],
+                    bolasAnteriores: [...bolasAnteriores],
+                    lineaConfirmada,
+                    bingoConfirmado,
+                    intervaloAutomatico: automaticoActivo
+                };
+
+                // Deshabilitar botones de acción mientras está en pausa
+                document.querySelector('button[onclick="sacarBola()"]').classList.add('deshabilitado');
+                document.querySelector('button[onclick="iniciarAutomatico()"]').classList.add('deshabilitado');
+                document.getElementById('pausaBtn').innerText = "Reanudar Juego"; // Cambiar texto del botón a "Reanudar"
+            } else {
+                // Restaurar el estado del juego cuando se reanuda
+                if (estadoJuego) {
+                    bolas = estadoJuego.bolasRestantes;
+                    bolasAnteriores = estadoJuego.bolasAnteriores;
+                    lineaConfirmada = estadoJuego.lineaConfirmada;
+                    bingoConfirmado = estadoJuego.bingoConfirmado;
+                    if (estadoJuego.intervaloAutomatico) {
+                        iniciarAutomatico(); // Si estaba en automático, reanudarlo
+                    }
+                }
+                // Habilitar botones cuando el juego no está en pausa
+                document.querySelector('button[onclick="sacarBola()"]').classList.remove('deshabilitado');
+                document.querySelector('button[onclick="iniciarAutomatico()"]').classList.remove('deshabilitado');
+                document.getElementById('pausaBtn').innerText = "Pausar Juego"; // Cambiar texto del botón a "Pausar"
+            }
+        }
+
+        function confirmarLinea(correcto) {
+            if (lineaConfirmada && correcto) return;
+            if (correcto) {
+                hablar("Línea correcta");
+                lineaConfirmada = true;
+                // Deshabilitar las opciones de Línea Correcta
+                document.getElementById("linea-correcta").classList.add("deshabilitado");
+                document.getElementById("linea-incorrecta").classList.add("deshabilitado");
+            } else {
+                hablar("Línea incorrecta");
+                // Rehabilitar las opciones de Línea Correcta
+                document.getElementById("linea-correcta").classList.remove("deshabilitado");
+                document.getElementById("linea-incorrecta").classList.remove("deshabilitado");
+            }
+        }
+
+        function confirmarBingo(correcto) {
+            if (bingoConfirmado && correcto) return;
+            if (correcto) {
+                hablar("Bingo confirmado");
+                bingoConfirmado = true;
+                // Deshabilitar las opciones de Bingo
+                document.getElementById("bingo-correcto").classList.add("deshabilitado");
+                document.getElementById("bingo-incorrecto").classList.add("deshabilitado");
+                detenerAutomatico(); // Detener la secuencia automática cuando se confirma el bingo
+                nuevaPartida(); // Restablecer todo para nueva partida
+            } else {
+                hablar("El Bingo cantado a resultado incorrecto, podemos seguir jugando");
+                // Rehabilitar las opciones de Bingo si el Bingo es incorrecto
+                document.getElementById("bingo-correcto").classList.remove("deshabilitado");
+                document.getElementById("bingo-incorrecto").classList.remove("deshabilitado");
+            }
+        }
+
+        function generarBolas() {
+            let zonaBolas = document.getElementById("zona-bolas");
+            for (let i = 1; i <= 80; i++) {
+                let bola = document.createElement("div");
+                bola.classList.add("bola");
+                bola.id = `bola-${i}`;
+                bola.innerText = i;
+                zonaBolas.appendChild(bola);
+            }
+        }
+
+        window.onload = function() {
+            generarBolas();
+        }
+    </script>
+</body>
+</html>
