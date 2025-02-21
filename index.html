@@ -11,6 +11,7 @@
         h1 { color: #ff6600; }
         .player-list { margin-top: 20px; }
         .player { background: #f8f8f8; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; }
+        .input-group { margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -37,27 +38,78 @@
                 playerDiv.classList.add('player');
                 playerDiv.innerHTML = `
                     <h3>Jugador ${i}</h3>
-                    <div>
-                        <a href="https://mikymallorca007.github.io/Bingo/Jugador${String(i).padStart(3, '0')}.html" target="_blank">Ver Cartón</a>
+                    <div class="input-group">
+                        <label for="playerName${i}">Nombre:</label>
+                        <input type="text" id="playerName${i}" placeholder="Nombre del jugador ${i}">
+                    </div>
+                    <div class="input-group">
+                        <label for="playerPhone${i}">Número de Teléfono:</label>
+                        <input type="text" id="playerPhone${i}" placeholder="Número del jugador ${i}">
                     </div>
                     <div>
-                        <a href="https://wa.me/?text=Tu%20cartón%20de%20bingo%20es:%20https://mikymallorca007.github.io/Bingo/Jugador${String(i).padStart(3, '0')}.html" target="_blank">Enviar por WhatsApp</a>
+                        <button onclick="generateCard(${i})">Generar Cartón</button>
                     </div>
+                    <div id="card-${i}" style="margin-top: 10px;"></div>
+                    <div id="whatsappLink-${i}" style="margin-top: 10px;"></div>
                 `;
                 playerList.appendChild(playerDiv);
             }
-
-            // Enviar automáticamente los enlaces de WhatsApp
-            sendWhatsAppLinks(numPlayers);
         }
 
-        function sendWhatsAppLinks(numPlayers) {
-            for (let i = 1; i <= numPlayers; i++) {
-                const message = `Tu cartón de bingo es: https://mikymallorca007.github.io/Bingo/Jugador${String(i).padStart(3, '0')}.html`;
-                const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                // Abre el enlace de WhatsApp automáticamente para cada jugador
-                window.open(whatsappLink, '_blank');
+        function generateCard(playerId) {
+            const playerName = document.getElementById(`playerName${playerId}`).value;
+            const playerPhone = document.getElementById(`playerPhone${playerId}`).value;
+            
+            if (!playerName || !playerPhone) {
+                alert('Por favor, ingresa el nombre y el número de teléfono del jugador');
+                return;
             }
+
+            const cardHtml = generateBingoCard(playerId);
+
+            const cardContainer = document.getElementById(`card-${playerId}`);
+            cardContainer.innerHTML = cardHtml;
+
+            // Crear el enlace de WhatsApp
+            const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
+            const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
+
+            const whatsappLinkContainer = document.getElementById(`whatsappLink-${playerId}`);
+            whatsappLinkContainer.innerHTML = `
+                <a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>
+            `;
+        }
+
+        function generateBingoCard(playerId) {
+            let numbers = Array(8).fill().map((_, i) => {
+                let min = i * 10 + 1;
+                let max = i === 7 ? 80 : (i + 1) * 10;
+                return Array.from({ length: max - min + 1 }, (_, index) => min + index)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 5) // Cambié a 5 números por columna
+                    .sort((a, b) => a - b);
+            });
+
+            let bomboPositions = new Set();
+            while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
+
+            let cellIndex = 0;
+            let cardHtml = '<div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;">';
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    let cell = '<div style="width: 40px; height: 40px; background: white; border: 1px solid black; text-align: center; line-height: 40px; font-weight: bold;">';
+                    if (bomboPositions.has(cellIndex)) {
+                        cell = `<div style="width: 40px; height: 40px; background: #f0f0f0; border: 1px solid black; text-align: center; line-height: 40px; font-weight: bold;">Bombo</div>`;
+                    } else {
+                        cell += numbers[col].length ? numbers[col].shift() : '';
+                    }
+                    cardHtml += cell;
+                    cellIndex++;
+                }
+            }
+            cardHtml += '</div>';
+
+            return cardHtml;
         }
     </script>
 </body>
