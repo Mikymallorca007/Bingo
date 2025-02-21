@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,6 +11,33 @@
         .player-list { margin-top: 20px; }
         .player { background: #f8f8f8; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; }
         .input-group { margin: 10px 0; }
+        .bingo-card { 
+            display: grid; 
+            grid-template-columns: repeat(8, 1fr); 
+            gap: 2px; 
+            width: 340px; 
+            margin: 10px auto; 
+            background: #eee; 
+            border-radius: 10px; 
+            border: 2px solid black; 
+            padding: 10px;
+        }
+        .cell { 
+            width: 40px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: white; 
+            border-radius: 5px; 
+            font-size: 18px; 
+            font-weight: bold;
+            border: 1px solid black;
+        }
+        .marked { background: lightgreen; }
+        .bombo { 
+            background: url('bombo.png') center/contain no-repeat;
+        }
     </style>
 </head>
 <body>
@@ -94,16 +120,16 @@
             while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
 
             let cellIndex = 0;
-            let cardHtml = '<div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;">';
+            let cardHtml = '<div class="bingo-card">';
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    let cell = '<div style="width: 40px; height: 40px; background: white; border: 1px solid black; text-align: center; line-height: 40px; font-weight: bold;">';
+                    let cell = '<div class="cell">';
                     if (bomboPositions.has(cellIndex)) {
-                        cell = `<div style="width: 40px; height: 40px; background: #f0f0f0; border: 1px solid black; text-align: center; line-height: 40px; font-weight: bold;">Bombo</div>`;
+                        cell = `<div class="cell bombo">Bombo</div>`;
                     } else {
                         cell += numbers[col].length ? numbers[col].shift() : '';
                     }
-                    cardHtml += cell;
+                    cardHtml += cell + '</div>';
                     cellIndex++;
                 }
             }
