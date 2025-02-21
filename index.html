@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -44,6 +45,18 @@
                     </div>
                 `;
                 playerList.appendChild(playerDiv);
+            }
+
+            // Enviar automáticamente los enlaces de WhatsApp
+            sendWhatsAppLinks(numPlayers);
+        }
+
+        function sendWhatsAppLinks(numPlayers) {
+            for (let i = 1; i <= numPlayers; i++) {
+                const message = `Tu cartón de bingo es: https://mikymallorca007.github.io/Bingo/Jugador${String(i).padStart(3, '0')}.html`;
+                const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                // Abre el enlace de WhatsApp automáticamente para cada jugador
+                window.open(whatsappLink, '_blank');
             }
         }
     </script>
