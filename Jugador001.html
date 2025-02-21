@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartón de Bingo - Jugador 001</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
+        h1 { color: #ff6600; }
+        .bingo-card { 
+            display: grid; 
+            grid-template-columns: repeat(8, 1fr); 
+            gap: 2px; 
+            width: 340px; 
+            margin: 10px auto; 
+            background: #eee; 
+            border-radius: 10px; 
+            border: 2px solid black; 
+            padding: 10px;
+        }
+        .cell { 
+            width: 40px; 
+            height: 40px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: white; 
+            border-radius: 5px; 
+            font-size: 18px; 
+            font-weight: bold;
+            border: 1px solid black;
+        }
+        .bombo { 
+            background: url('bombo.png') center/contain no-repeat;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cartón de Bingo - Jugador 001</h1>
+        <div id="card" class="bingo-card">
+            <!-- El cartón se generará aquí con JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Recuperar el cartón guardado en localStorage
+        const cardData = JSON.parse(localStorage.getItem('cartonJugador1'));
+
+        if (cardData) {
+            const card = document.getElementById('card');
+            cardData.forEach(content => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.textContent = content;
+                card.appendChild(cell);
+            });
+        } else {
+            console.error('No se encontró el cartón para el jugador');
+        }
+    </script>
+</body>
+</html>
