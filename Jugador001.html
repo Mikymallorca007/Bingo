@@ -3,62 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartón de Bingo - Jugador 001</title>
+    <title>Cartón de Bingo</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
         .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
         h1 { color: #ff6600; }
-        .bingo-card { 
-            display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            gap: 2px; 
-            width: 340px; 
-            margin: 10px auto; 
-            background: #eee; 
-            border-radius: 10px; 
-            border: 2px solid black; 
+        .bingo-card {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            width: 400px;
+            margin: 10px auto;
+            background: #eee;
+            border-radius: 10px;
+            border: 2px solid black;
             padding: 10px;
         }
-        .cell { 
-            width: 40px; 
-            height: 40px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: white; 
-            border-radius: 5px; 
-            font-size: 18px; 
+        .cell {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 5px;
+            font-size: 18px;
             font-weight: bold;
             border: 1px solid black;
-        }
-        .bombo { 
-            background: url('bombo.png') center/contain no-repeat;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Cartón de Bingo - Jugador 001</h1>
-        <div id="card" class="bingo-card">
-            <!-- El cartón se generará aquí con JavaScript -->
-        </div>
+        <h1>Tu Cartón de Bingo</h1>
+        <div id="bingoCardContainer"></div>
     </div>
 
     <script>
-        // Recuperar los datos del cartón de la URL
-        const params = new URLSearchParams(window.location.search);
-        const cartonData = JSON.parse(decodeURIComponent(params.get('carton')));
+        window.onload = function() {
+            const playerId = location.href.split('Jugador')[1].split('.html')[0];
+            const carton = localStorage.getItem(`cartonJugador${playerId}`);
+            
+            if (!carton) {
+                document.getElementById('bingoCardContainer').innerHTML = 'No se ha encontrado tu cartón. Vuelve a generarlo.';
+                return;
+            }
 
-        if (cartonData) {
-            const card = document.getElementById('card');
-            cartonData.forEach(content => {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.textContent = content;
-                card.appendChild(cell);
-            });
-        } else {
-            console.error('No se encontró el cartón para el jugador');
+            const cartonData = JSON.parse(carton);
+            const bingoCard = generateBingoCard(cartonData);
+            document.getElementById('bingoCardContainer').innerHTML = bingoCard;
+        };
+
+        function generateBingoCard(cartonData) {
+            let cardHtml = '<div class="bingo-card">';
+            let cellIndex = 0;
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    let value = cartonData[cellIndex];
+                    if (value === '*') {
+                        cardHtml += `<div class="cell">*</div>`;
+                    } else {
+                        cardHtml += `<div class="cell">${value}</div>`;
+                    }
+                    cellIndex++;
+                }
+            }
+            cardHtml += '</div>';
+            return cardHtml;
         }
     </script>
 </body>
