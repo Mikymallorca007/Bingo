@@ -1,59 +1,70 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo - Generar Cartón</title>
-    <script type="module">
-        // Importar Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAUBhl6WReg9I4Xlt9ie8GXGMvY_z0Wer4",
-            authDomain: "cartones-bingo-online.firebaseapp.com",
-            projectId: "cartones-bingo-online",
-            storageBucket: "cartones-bingo-online.appspot.com",
-            messagingSenderId: "76376812918",
-            appId: "1:76376812918:web:00f9747409931301589e57"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        function generarCarton() {
-            let carton = [];
-            for (let col = 0; col < 8; col++) {
-                let min = col * 10 + 1;
-                let max = col === 7 ? 80 : (col + 1) * 10;
-                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
-                    .sort(() => Math.random() - 0.5)
-                    .slice(0, 5)
-                    .sort((a, b) => a - b);
-                carton.push(...colNumbers);
-            }
-
-            let jugadorId = document.getElementById("jugadorId").value;
-            if (!jugadorId) {
-                alert("Introduce un número de jugador.");
-                return;
-            }
-
-            // Guardar cartón en Firebase
-            set(ref(db, 'cartones/' + jugadorId), { carton });
-
-            alert("Cartón generado para Jugador " + jugadorId);
-        }
-        
-        window.generarCarton = generarCarton;
-    </script>
+    <title>Bingo Online</title>
+    <script type="module" src="script.js"></script>
 </head>
 <body>
-    <h1>Generador de Cartón de Bingo</h1>
-    <label>Jugador ID:</label>
-    <input type="text" id="jugadorId">
-    <button onclick="generarCarton()">Generar Cartón</button>
+    <h1>Generar Cartón de Bingo</h1>
+    <button id="generar">Generar Cartón</button>
+    <div id="carton"></div>
 </body>
 </html>
+
+<!-- jugador.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Cartón</title>
+    <script type="module" src="script.js"></script>
+</head>
+<body>
+    <h1>Tu Cartón de Bingo</h1>
+    <div id="carton"></div>
+</body>
+</html>
+
+<!-- script.js -->
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAUBhl6-EXAMPLE",
+    authDomain: "cartones-bingo-online.firebaseapp.com",
+    databaseURL: "https://cartones-bingo-online-default-rtdb.firebaseio.com/",
+    projectId: "cartones-bingo-online",
+    storageBucket: "cartones-bingo-online.appspot.com",
+    messagingSenderId: "76376812918",
+    appId: "1:76376812918:web:00f9747409931301589e57",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+document.getElementById("generar")?.addEventListener("click", () => {
+    const carton = generarCarton();
+    set(ref(db, 'cartones/jugador001'), { carton })
+        .then(() => alert("Cartón guardado en Firebase"))
+        .catch(error => console.error("Error al guardar", error));
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    get(child(ref(db), 'cartones/jugador001'))
+        .then(snapshot => {
+            if (snapshot.exists()) {
+                document.getElementById("carton").innerText = JSON.stringify(snapshot.val().carton);
+            } else {
+                document.getElementById("carton").innerText = "No se encontró tu cartón.";
+            }
+        })
+        .catch(error => console.error("Error al obtener el cartón", error));
+});
+
+function generarCarton() {
+    return Array.from({ length: 24 }, () => Math.floor(Math.random() * 80) + 1);
+}
