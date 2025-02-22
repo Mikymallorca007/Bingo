@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tu Cartón de Bingo</title>
+    <title>Cartón de Bingo - Jugador 001</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
+        h1 { color: #ff6600; }
         .bingo-card { 
             display: grid; 
             grid-template-columns: repeat(8, 1fr); 
@@ -35,37 +37,27 @@
     </style>
 </head>
 <body>
-    <h1>Tu Cartón de Bingo</h1>
-    <div class="bingo-card" id="playerCard">
-        <!-- El cartón del jugador se generará aquí -->
+    <div class="container">
+        <h1>Cartón de Bingo - Jugador 001</h1>
+        <div id="card" class="bingo-card">
+            <!-- El cartón se generará aquí con JavaScript -->
+        </div>
     </div>
 
     <script>
-        window.onload = function() {
-            // Recuperar el cartón del jugador desde localStorage
-            const playerId = window.location.pathname.split('/').pop().replace('Jugador', '').replace('.html', '');
-            const cartonData = JSON.parse(localStorage.getItem(`cartonJugador${playerId}`));
+        // Recuperar el cartón guardado en localStorage
+        const cardData = JSON.parse(localStorage.getItem('cartonJugador1'));
 
-            if (cartonData) {
-                const cardContainer = document.getElementById('playerCard');
-                let index = 0;
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        let cell = document.createElement('div');
-                        cell.classList.add('cell');
-                        let cellContent = cartonData[index];
-                        if (cellContent === '') {
-                            cell.classList.add('bombo');
-                        } else {
-                            cell.textContent = cellContent;
-                        }
-                        cardContainer.appendChild(cell);
-                        index++;
-                    }
-                }
-            } else {
-                alert('No se ha encontrado tu cartón. Intenta acceder desde el enlace correcto.');
-            }
+        if (cardData) {
+            const card = document.getElementById('card');
+            cardData.forEach(content => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.textContent = content;
+                card.appendChild(cell);
+            });
+        } else {
+            console.error('No se encontró el cartón para el jugador');
         }
     </script>
 </body>
