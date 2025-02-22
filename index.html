@@ -11,29 +11,6 @@
         .player-list { margin-top: 20px; }
         .player { background: #f8f8f8; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; }
         .input-group { margin: 10px 0; }
-        .bingo-card {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            width: 400px;
-            margin: 10px auto;
-            background: #eee;
-            border-radius: 10px;
-            border: 2px solid black;
-            padding: 10px;
-        }
-        .cell {
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            border: 1px solid black;
-        }
     </style>
 </head>
 <body>
@@ -67,7 +44,6 @@
                         <input type="text" id="playerPhone${i}" placeholder="Número del jugador ${i}">
                     </div>
                     <button onclick="generateCard(${i})">Generar Cartón</button>
-                    <div id="card-${i}" style="margin-top: 10px;"></div>
                     <div id="whatsappLink-${i}" style="margin-top: 10px;"></div>
                 `;
                 playerList.appendChild(playerDiv);
@@ -77,20 +53,18 @@
         function generateCard(playerId) {
             const playerName = document.getElementById(`playerName${playerId}`).value;
             const playerPhone = document.getElementById(`playerPhone${playerId}`).value;
-            
+
             if (!playerName || !playerPhone) {
                 alert('Por favor, ingresa el nombre y el número de teléfono del jugador');
                 return;
             }
 
-            const cardContainer = document.getElementById(`card-${playerId}`);
             const bingoCard = generateBingoCard();
-            cardContainer.innerHTML = bingoCard.html;
-            
-            // Guardar cartón en localStorage
-            localStorage.setItem(`cartonJugador${playerId}`, JSON.stringify(bingoCard.data));
+            const cardData = bingoCard.data.join(',');
 
-            const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
+            const playerCardUrl = `${window.location.origin}/Jugador${String(playerId).padStart(3, '0')}.html?card=${cardData}`;
+
+            const message = `Hola ${playerName}, tu cartón de bingo es:\n${playerCardUrl}`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
             document.getElementById(`whatsappLink-${playerId}`).innerHTML = `<a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>`;
         }
@@ -115,9 +89,14 @@
             let cardData = [];
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    let number = numbers[col].shift();
-                    cardHtml += `<div class="cell">${number}</div>`;
-                    cardData.push(number);
+                    if (bomboPositions.has(cellIndex)) {
+                        cardHtml += `<div class="cell bombo">*</div>`;
+                        cardData.push('*');
+                    } else {
+                        let number = numbers[col].shift();
+                        cardHtml += `<div class="cell">${number}</div>`;
+                        cardData.push(number);
+                    }
                     cellIndex++;
                 }
             }
