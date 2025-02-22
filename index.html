@@ -99,41 +99,66 @@
         }
 
         function generateBingoCard() {
-    let numbers = [];
-    for (let col = 0; col < 8; col++) {
-        let min = col * 10 + 1;
-        let max = col === 7 ? 80 : (col + 1) * 10;
-        let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 5)
-            .sort((a, b) => a - b);
-        numbers.push(colNumbers);
-    }
-
-    console.log("Números generados:", numbers);  // Esto te permite ver los números generados en la consola
-
-    let bomboPositions = new Set();
-    while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
-
-    let cellIndex = 0;
-    let cardHtml = '<div class="bingo-card">';
-    let cardData = [];
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 8; col++) {
-            if (bomboPositions.has(cellIndex)) {
-                cardHtml += `<div class="cell bombo">*</div>`;
-                cardData.push('*');
-            } else {
-                let number = numbers[col].shift();
-                cardHtml += `<div class="cell">${number}</div>`;
-                cardData.push(number);
+            let numbers = [];
+            for (let col = 0; col < 8; col++) {
+                let min = col * 10 + 1;
+                let max = col === 7 ? 80 : (col + 1) * 10;
+                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 5)
+                    .sort((a, b) => a - b);
+                numbers.push(colNumbers);
             }
-            cellIndex++;
+
+            let bomboPositions = new Set();
+            while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
+
+            let cellIndex = 0;
+            let cardHtml = '<div class="bingo-card">';
+            let cardData = [];
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (bomboPositions.has(cellIndex)) {
+                        cardHtml += `<div class="cell bombo">*</div>`;
+                        cardData.push('*');
+                    } else {
+                        let number = numbers[col].shift();
+                        cardHtml += `<div class="cell">${number}</div>`;
+                        cardData.push(number);
+                    }
+                    cellIndex++;
+                }
+            }
+            cardHtml += '</div>';
+            return { html: cardHtml, data: cardData };
         }
-    }
-    cardHtml += '</div>';
-    return { html: cardHtml, data: cardData };
-        }
+
+        // Al cargar la página, leer el cartón desde localStorage y mostrarlo
+        window.onload = function() {
+            const playerId = 1;  // Cambia este valor según el jugador que quieras cargar
+            const storedCard = localStorage.getItem(`cartonJugador${playerId}`);
+
+            if (storedCard) {
+                const bingoCard = JSON.parse(storedCard);
+                const cardContainer = document.getElementById(`card-${playerId}`);
+                let cardHtml = '<div class="bingo-card">';
+                let cellIndex = 0;
+
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const value = bingoCard[cellIndex];
+                        if (value === '*') {
+                            cardHtml += `<div class="cell bombo">*</div>`;
+                        } else {
+                            cardHtml += `<div class="cell">${value}</div>`;
+                        }
+                        cellIndex++;
+                    }
+                }
+                cardHtml += '</div>';
+                cardContainer.innerHTML = cardHtml;
+            }
+        };
     </script>
 </body>
 </html>
