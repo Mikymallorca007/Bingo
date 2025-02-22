@@ -3,73 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartón de Bingo</title>
-    <style>
-        .bingo-card {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            width: 400px;
-            margin: 10px auto;
-            background: #eee;
-            border-radius: 10px;
-            border: 2px solid black;
-            padding: 10px;
+    <title>Tu Cartón de Bingo</title>
+    <script type="module">
+        // Importar Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUBhl6WReg9I4Xlt9ie8GXGMvY_z0Wer4",
+            authDomain: "cartones-bingo-online.firebaseapp.com",
+            projectId: "cartones-bingo-online",
+            storageBucket: "cartones-bingo-online.appspot.com",
+            messagingSenderId: "76376812918",
+            appId: "1:76376812918:web:00f9747409931301589e57"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function cargarCarton() {
+            const jugadorId = "Jugador001"; // Cambiar por el ID dinámico si es necesario
+            const cartonRef = ref(db, 'cartones/' + jugadorId);
+
+            get(cartonRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const datos = snapshot.val();
+                    mostrarCarton(datos.carton);
+                } else {
+                    document.getElementById("carton").innerHTML = "No se ha encontrado tu cartón. Vuelve a generarlo.";
+                }
+            });
         }
-        .cell {
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            border: 1px solid black;
+
+        function mostrarCarton(carton) {
+            let html = "<table border='1'>";
+            for (let i = 0; i < carton.length; i++) {
+                if (i % 8 === 0) html += "<tr>";
+                html += `<td>${carton[i]}</td>`;
+                if (i % 8 === 7) html += "</tr>";
+            }
+            html += "</table>";
+            document.getElementById("carton").innerHTML = html;
         }
-        .bombo {
-            background: url('bombo.png') center/contain no-repeat;
-        }
-    </style>
+
+        window.onload = cargarCarton;
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Tu Cartón de Bingo</h1>
-        <div id="bingoCardContainer"></div>
-    </div>
-
-    <script>
-        window.onload = function() {
-            const playerId = '1';  // Usar el ID adecuado para cada jugador.
-            const cardData = sessionStorage.getItem(`cartonJugador${playerId}`);
-            
-            if (cardData) {
-                const bingoCard = JSON.parse(cardData);
-                displayBingoCard(bingoCard);
-            } else {
-                alert('No se ha encontrado el cartón. Vuelve a generarlo.');
-            }
-        }
-
-        function displayBingoCard(bingoCard) {
-            const cardContainer = document.getElementById('bingoCardContainer');
-            let cardHtml = '<div class="bingo-card">';
-            
-            let index = 0;
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (bingoCard[index] === '*') {
-                        cardHtml += `<div class="cell bombo">*</div>`;
-                    } else {
-                        cardHtml += `<div class="cell">${bingoCard[index]}</div>`;
-                    }
-                    index++;
-                }
-            }
-            cardHtml += '</div>';
-            cardContainer.innerHTML = cardHtml;
-        }
-    </script>
+    <h1>Tu Cartón de Bingo</h1>
+    <div id="carton">Cargando...</div>
 </body>
 </html>
