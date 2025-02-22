@@ -34,6 +34,9 @@
             font-weight: bold;
             border: 1px solid black;
         }
+        .bombo {
+            background: url('bombo.png') center/contain no-repeat;
+        }
     </style>
 </head>
 <body>
@@ -87,8 +90,8 @@
             const bingoCard = generateBingoCard();
             cardContainer.innerHTML = bingoCard.html;
             
-            // Guardar cartón en localStorage
-            localStorage.setItem(`cartonJugador${playerId}`, JSON.stringify(bingoCard.data));
+            // Guardar cartón en sessionStorage
+            sessionStorage.setItem(`cartonJugador${playerId}`, JSON.stringify(bingoCard.data));
 
             const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
@@ -116,7 +119,7 @@
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
                     if (bomboPositions.has(cellIndex)) {
-                        cardHtml += `<div class="cell">*</div>`;
+                        cardHtml += `<div class="cell bombo">*</div>`;
                         cardData.push('*');
                     } else {
                         let number = numbers[col].shift();
