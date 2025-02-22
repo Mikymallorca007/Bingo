@@ -11,31 +11,30 @@
         .player-list { margin-top: 20px; }
         .player { background: #f8f8f8; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; }
         .input-group { margin: 10px 0; }
-        .bingo-card { 
-            display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            gap: 2px; 
-            width: 340px; 
-            margin: 10px auto; 
-            background: #eee; 
-            border-radius: 10px; 
-            border: 2px solid black; 
+        .bingo-card {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            width: 400px;
+            margin: 10px auto;
+            background: #eee;
+            border-radius: 10px;
+            border: 2px solid black;
             padding: 10px;
         }
-        .cell { 
-            width: 40px; 
-            height: 40px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: white; 
-            border-radius: 5px; 
-            font-size: 18px; 
+        .cell {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 5px;
+            font-size: 18px;
             font-weight: bold;
             border: 1px solid black;
         }
-        .marked { background: lightgreen; }
-        .bombo { 
+        .bombo {
             background: url('bombo.png') center/contain no-repeat;
         }
     </style>
@@ -48,16 +47,14 @@
             <input type="number" id="numPlayers" min="1" max="100" value="1">
             <button onclick="createPlayers()">Configurar Jugadores</button>
         </div>
-        <div class="player-list" id="playerList">
-            <!-- Los jugadores y sus cartones aparecerán aquí -->
-        </div>
+        <div class="player-list" id="playerList"></div>
     </div>
 
     <script>
         function createPlayers() {
             const numPlayers = document.getElementById('numPlayers').value;
             const playerList = document.getElementById('playerList');
-            playerList.innerHTML = ''; // Limpiar lista de jugadores
+            playerList.innerHTML = '';
 
             for (let i = 1; i <= numPlayers; i++) {
                 const playerDiv = document.createElement('div');
@@ -72,9 +69,7 @@
                         <label for="playerPhone${i}">Número de Teléfono:</label>
                         <input type="text" id="playerPhone${i}" placeholder="Número del jugador ${i}">
                     </div>
-                    <div>
-                        <button onclick="generateCard(${i})">Generar Cartón</button>
-                    </div>
+                    <button onclick="generateCard(${i})">Generar Cartón</button>
                     <div id="card-${i}" style="margin-top: 10px;"></div>
                     <div id="whatsappLink-${i}" style="margin-top: 10px;"></div>
                 `;
@@ -91,30 +86,26 @@
                 return;
             }
 
-            const cardHtml = generateBingoCard(playerId);
-
             const cardContainer = document.getElementById(`card-${playerId}`);
-            cardContainer.innerHTML = cardHtml;
+            cardContainer.innerHTML = generateBingoCard();
 
-            // Crear el enlace de WhatsApp
-            const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
+            const message = `Hola ${playerName}, tu cartón de bingo es:
+${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
-
-            const whatsappLinkContainer = document.getElementById(`whatsappLink-${playerId}`);
-            whatsappLinkContainer.innerHTML = `
-                <a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>
-            `;
+            document.getElementById(`whatsappLink-${playerId}`).innerHTML = `<a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>`;
         }
 
-        function generateBingoCard(playerId) {
-            let numbers = Array(8).fill().map((_, i) => {
-                let min = i * 10 + 1;
-                let max = i === 7 ? 80 : (i + 1) * 10;
-                return Array.from({ length: max - min + 1 }, (_, index) => min + index)
+        function generateBingoCard() {
+            let numbers = [];
+            for (let col = 0; col < 8; col++) {
+                let min = col * 10 + 1;
+                let max = col === 7 ? 80 : (col + 1) * 10;
+                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
                     .sort(() => Math.random() - 0.5)
-                    .slice(0, 5) // Cambié a 5 números por columna
+                    .slice(0, 5)
                     .sort((a, b) => a - b);
-            });
+                numbers.push(colNumbers);
+            }
 
             let bomboPositions = new Set();
             while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
@@ -123,18 +114,15 @@
             let cardHtml = '<div class="bingo-card">';
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    let cell = '<div class="cell">';
                     if (bomboPositions.has(cellIndex)) {
-                        cell = `<div class="cell bombo">Bombo</div>`;
+                        cardHtml += `<div class="cell bombo">*</div>`;
                     } else {
-                        cell += numbers[col].length ? numbers[col].shift() : '';
+                        cardHtml += `<div class="cell">${numbers[col].shift()}</div>`;
                     }
-                    cardHtml += cell + '</div>';
                     cellIndex++;
                 }
             }
             cardHtml += '</div>';
-
             return cardHtml;
         }
     </script>
