@@ -99,38 +99,40 @@
         }
 
         function generateBingoCard() {
-            let numbers = [];
-            for (let col = 0; col < 8; col++) {
-                let min = col * 10 + 1;
-                let max = col === 7 ? 80 : (col + 1) * 10;
-                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
-                    .sort(() => Math.random() - 0.5)
-                    .slice(0, 5)
-                    .sort((a, b) => a - b);
-                numbers.push(colNumbers);
-            }
+    let numbers = [];
+    for (let col = 0; col < 8; col++) {
+        let min = col * 10 + 1;
+        let max = col === 7 ? 80 : (col + 1) * 10;
+        let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 5)
+            .sort((a, b) => a - b);
+        numbers.push(colNumbers);
+    }
 
-            let bomboPositions = new Set();
-            while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
+    console.log("Números generados:", numbers);  // Esto te permite ver los números generados en la consola
 
-            let cellIndex = 0;
-            let cardHtml = '<div class="bingo-card">';
-            let cardData = [];
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (bomboPositions.has(cellIndex)) {
-                        cardHtml += `<div class="cell bombo">*</div>`;
-                        cardData.push('*');
-                    } else {
-                        let number = numbers[col].shift();
-                        cardHtml += `<div class="cell">${number}</div>`;
-                        cardData.push(number);
-                    }
-                    cellIndex++;
-                }
+    let bomboPositions = new Set();
+    while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
+
+    let cellIndex = 0;
+    let cardHtml = '<div class="bingo-card">';
+    let cardData = [];
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (bomboPositions.has(cellIndex)) {
+                cardHtml += `<div class="cell bombo">*</div>`;
+                cardData.push('*');
+            } else {
+                let number = numbers[col].shift();
+                cardHtml += `<div class="cell">${number}</div>`;
+                cardData.push(number);
             }
-            cardHtml += '</div>';
-            return { html: cardHtml, data: cardData };
+            cellIndex++;
+        }
+    }
+    cardHtml += '</div>';
+    return { html: cardHtml, data: cardData };
         }
     </script>
 </body>
