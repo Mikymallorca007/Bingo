@@ -88,9 +88,10 @@
 
             const cardContainer = document.getElementById(`card-${playerId}`);
             const bingoCard = generateBingoCard();
-            cardContainer.innerHTML = bingoCard;
+            cardContainer.innerHTML = bingoCard.html;
             
-            localStorage.setItem(`Jugador${String(playerId).padStart(3, '0')}`, bingoCard);
+            // Guardar cartón en localStorage
+            localStorage.setItem(`cartonJugador${playerId}`, JSON.stringify(bingoCard.data));
 
             const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
@@ -114,18 +115,22 @@
 
             let cellIndex = 0;
             let cardHtml = '<div class="bingo-card">';
+            let cardData = [];
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
                     if (bomboPositions.has(cellIndex)) {
                         cardHtml += `<div class="cell bombo">*</div>`;
+                        cardData.push('*');
                     } else {
-                        cardHtml += `<div class="cell">${numbers[col].shift()}</div>`;
+                        let number = numbers[col].shift();
+                        cardHtml += `<div class="cell">${number}</div>`;
+                        cardData.push(number);
                     }
                     cellIndex++;
                 }
             }
             cardHtml += '</div>';
-            return cardHtml;
+            return { html: cardHtml, data: cardData };
         }
     </script>
 </body>
