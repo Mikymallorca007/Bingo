@@ -3,47 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Bingo</title>
-    <style>
-        /* Estilos para el cartón del master */
-    </style>
+    <title>Bingo Master</title>
+
+    <!-- Agregar Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+
+    <script>
+      // Configuración de Firebase (reemplaza con tus datos)
+      const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        authDomain: "TU_AUTH_DOMAIN",
+        projectId: "TU_PROJECT_ID",
+        storageBucket: "TU_STORAGE_BUCKET",
+        messagingSenderId: "TU_MESSAGING_SENDER_ID",
+        appId: "TU_APP_ID"
+      };
+
+      // Inicializar Firebase
+      const app = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore(app);
+
+      // Generar un cartón aleatorio
+      function generarCartonAleatorio() {
+        const carton = [];
+        for (let i = 0; i < 8; i++) {
+          let columna = [];
+          let rangoMin = i * 10 + 1;
+          let rangoMax = (i + 1) * 10;
+
+          while (columna.length < 3) {
+            let numero = Math.floor(Math.random() * (rangoMax - rangoMin + 1)) + rangoMin;
+            if (!columna.includes(numero)) {
+              columna.push(numero);
+            }
+          }
+          carton.push(columna);
+        }
+        return carton;
+      }
+
+      // Guardar el cartón en Firebase
+      function guardarCartonEnFirebase(carton) {
+        db.collection("cartones").add({
+          carton: carton,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then((docRef) => {
+          console.log("Cartón guardado con ID: ", docRef.id);
+        })
+        .catch((error) => {
+          console.error("Error al guardar el cartón: ", error);
+        });
+      }
+
+      // Mostrar el cartón del master
+      function mostrarCartonMaster(carton) {
+        const divCarton = document.getElementById('cartonMaster');
+        divCarton.innerHTML = '';  // Limpiar el div antes de mostrar el cartón
+
+        carton.forEach(fila => {
+          const filaDiv = document.createElement('div');
+          fila.forEach(num => {
+            const casilla = document.createElement('div');
+            casilla.textContent = num;
+            casilla.classList.add('casilla');
+            filaDiv.appendChild(casilla);
+          });
+          divCarton.appendChild(filaDiv);
+        });
+      }
+
+      // Escuchar cambios en Firestore para obtener el cartón en tiempo real
+      db.collection("cartones").orderBy("timestamp", "desc").limit(1).onSnapshot((snapshot) => {
+        snapshot.forEach((doc) => {
+          const carton = doc.data().carton;
+          mostrarCartonMaster(carton);
+        });
+      });
+
+      // Función para manejar el botón de generar cartón
+      function generarCarton() {
+        const cartonGenerado = generarCartonAleatorio();
+        guardarCartonEnFirebase(cartonGenerado);
+      }
+
+    </script>
 </head>
 <body>
-    <h1>Cartón de Bingo del Jugador</h1>
-    <div id="cartonMaster"></div>
+    <h1>Bingo Master</h1>
 
-    <button id="generarCarton">Generar Cartón</button>
+    <div id="cartonMaster">
+        <!-- El cartón generado por el master se mostrará aquí -->
+    </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-
-        // Recibir el cartón del jugador
-        socket.on('cartonParaMaster', (carton) => {
-            mostrarCartonMaster(carton);
-        });
-
-        // Mostrar el cartón en la vista del master
-        function mostrarCartonMaster(carton) {
-            const divCarton = document.getElementById('cartonMaster');
-            divCarton.innerHTML = ''; // Limpiar el div
-
-            carton.forEach(fila => {
-                const filaDiv = document.createElement('div');
-                fila.forEach(num => {
-                    const casilla = document.createElement('div');
-                    casilla.textContent = num;
-                    casilla.classList.add('casilla');
-                    filaDiv.appendChild(casilla);
-                });
-                divCarton.appendChild(filaDiv);
-            });
-        }
-
-        // Generar un cartón para el jugador al hacer clic en el botón
-        document.getElementById('generarCarton').addEventListener('click', () => {
-            socket.emit('generarCarton');
-        });
-    </script>
+    <button onclick="generarCarton()">Generar Cartón</button>
 </body>
 </html>
