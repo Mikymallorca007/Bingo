@@ -34,9 +34,7 @@
             font-weight: bold;
             border: 1px solid black;
         }
-        .bombo {
-            background: url('bombo.png') center/contain no-repeat;
-        }
+        .bombo { background: url('bombo.png') center/contain no-repeat; }
     </style>
 </head>
 <body>
@@ -86,11 +84,13 @@
                 return;
             }
 
+            const cardData = generateBingoCard();
+            localStorage.setItem(`Jugador${String(playerId).padStart(3, '0')}`, JSON.stringify(cardData));
+            
             const cardContainer = document.getElementById(`card-${playerId}`);
-            cardContainer.innerHTML = generateBingoCard();
+            cardContainer.innerHTML = renderBingoCard(cardData);
 
-            const message = `Hola ${playerName}, tu cartón de bingo es:
-${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
+            const message = `Hola ${playerName}, tu cartón de bingo es: \n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
             document.getElementById(`whatsappLink-${playerId}`).innerHTML = `<a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>`;
         }
@@ -109,12 +109,17 @@ ${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
 
             let bomboPositions = new Set();
             while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
+            
+            return { numbers, bomboPositions: Array.from(bomboPositions) };
+        }
 
+        function renderBingoCard(cardData) {
+            let { numbers, bomboPositions } = cardData;
             let cellIndex = 0;
             let cardHtml = '<div class="bingo-card">';
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    if (bomboPositions.has(cellIndex)) {
+                    if (bomboPositions.includes(cellIndex)) {
                         cardHtml += `<div class="cell bombo">*</div>`;
                     } else {
                         cardHtml += `<div class="cell">${numbers[col].shift()}</div>`;
