@@ -1,70 +1,76 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Online</title>
-    <script type="module" src="script.js"></script>
-</head>
-<body>
-    <h1>Generar Cartón de Bingo</h1>
-    <button id="generar">Generar Cartón</button>
-    <div id="carton"></div>
-</body>
-</html>
+    <title>Panel del Master - Bingo 80 bolas</title>
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-<!-- jugador.html -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tu Cartón</title>
-    <script type="module" src="script.js"></script>
-</head>
-<body>
-    <h1>Tu Cartón de Bingo</h1>
-    <div id="carton"></div>
-</body>
-</html>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUBhl6W-Reg9I4Xlt9ie8GXGMvY_z0Wer4",
+            authDomain: "cartones-bingo-online.firebaseapp.com",
+            databaseURL: "https://cartones-bingo-online-default-rtdb.firebaseio.com/",
+            projectId: "cartones-bingo-online",
+            storageBucket: "cartones-bingo-online.appspot.com",
+            messagingSenderId: "76376812918",
+            appId: "1:76376812918:web:00f9747409931301589e57",
+            measurementId: "G-WDDN59LS3C"
+        };
 
-<!-- script.js -->
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAUBhl6-EXAMPLE",
-    authDomain: "cartones-bingo-online.firebaseapp.com",
-    databaseURL: "https://cartones-bingo-online-default-rtdb.firebaseio.com/",
-    projectId: "cartones-bingo-online",
-    storageBucket: "cartones-bingo-online.appspot.com",
-    messagingSenderId: "76376812918",
-    appId: "1:76376812918:web:00f9747409931301589e57",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-document.getElementById("generar")?.addEventListener("click", () => {
-    const carton = generarCarton();
-    set(ref(db, 'cartones/jugador001'), { carton })
-        .then(() => alert("Cartón guardado en Firebase"))
-        .catch(error => console.error("Error al guardar", error));
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    get(child(ref(db), 'cartones/jugador001'))
-        .then(snapshot => {
-            if (snapshot.exists()) {
-                document.getElementById("carton").innerText = JSON.stringify(snapshot.val().carton);
-            } else {
-                document.getElementById("carton").innerText = "No se encontró tu cartón.";
+        // Función para generar el cartón de bingo
+        function generateBingoCard(playerId) {
+            let numbers = [];
+            for (let col = 0; col < 8; col++) {
+                let min = col * 10 + 1;
+                let max = col === 7 ? 80 : (col + 1) * 10;
+                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 5)
+                    .sort((a, b) => a - b);
+                numbers.push(colNumbers);
             }
-        })
-        .catch(error => console.error("Error al obtener el cartón", error));
-});
+            
+            let cardData = [];
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    cardData.push(numbers[col][row]);
+                }
+            }
+            
+            set(ref(db, `cartones/${playerId}`), { card: cardData })
+                .then(() => alert(`Cartón generado para Jugador ${playerId}`))
+                .catch(error => console.error("Error al guardar en Firebase: ", error));
+        }
 
-function generarCarton() {
-    return Array.from({ length: 24 }, () => Math.floor(Math.random() * 80) + 1);
-}
+        // Función para obtener y mostrar un cartón
+        function loadBingoCard(playerId) {
+            get(child(ref(db), `cartones/${playerId}`)).then(snapshot => {
+                if (snapshot.exists()) {
+                    console.log("Cartón cargado: ", snapshot.val().card);
+                } else {
+                    console.log("No se encontró cartón para este jugador");
+                }
+            }).catch(error => console.error("Error al cargar datos: ", error));
+        }
+
+        // Exportar funciones globalmente
+        window.generateBingoCard = generateBingoCard;
+        window.loadBingoCard = loadBingoCard;
+    </script>
+</head>
+<body>
+    <h1>Panel del Master - Bingo 80 bolas</h1>
+    <label for="playerId">ID del Jugador:</label>
+    <input type="text" id="playerId" placeholder="Ingrese el ID">
+    <button onclick="generateBingoCard(document.getElementById('playerId').value)">Generar Cartón</button>
+    <button onclick="loadBingoCard(document.getElementById('playerId').value)">Cargar Cartón</button>
+</body>
+</html>
