@@ -3,71 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartón de Bingo - Jugador 001</title>
+    <title>Cartón de Bingo</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
         .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
         h1 { color: #ff6600; }
-        .bingo-card { 
-            display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            gap: 2px; 
-            width: 340px; 
-            margin: 10px auto; 
-            background: #eee; 
-            border-radius: 10px; 
-            border: 2px solid black; 
+        .bingo-card {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            width: 400px;
+            margin: 10px auto;
+            background: #eee;
+            border-radius: 10px;
+            border: 2px solid black;
             padding: 10px;
         }
-        .cell { 
-            width: 40px; 
-            height: 40px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: white; 
-            border-radius: 5px; 
-            font-size: 18px; 
+        .cell {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 5px;
+            font-size: 18px;
             font-weight: bold;
             border: 1px solid black;
         }
-        .bombo { 
+        .bombo {
             background: url('bombo.png') center/contain no-repeat;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Cartón de Bingo - Jugador 001</h1>
-        <div id="card" class="bingo-card">
-            <!-- El cartón se generará aquí con JavaScript -->
-        </div>
+        <h1>Tu Cartón de Bingo</h1>
+        <div id="card-1"></div>
     </div>
 
     <script>
-        // Recuperar el cartón guardado en localStorage
-        const cardData = JSON.parse(localStorage.getItem('cartonJugador001'));
+        window.onload = function() {
+            const playerId = 1;  // Cambia este valor según el jugador que quieras cargar
+            const storedCard = localStorage.getItem(`cartonJugador${playerId}`);
 
-        if (cardData) {
-            const card = document.getElementById('card');
-            let cellIndex = 0;
-            cardData.forEach(row => {
-                row.forEach(value => {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    if (value === '*') {
-                        cell.classList.add('bombo');
-                        cell.textContent = '*';
-                    } else {
-                        cell.textContent = value;
+            console.log('Cartón cargado desde localStorage:', storedCard);  // Añadir esta línea
+
+            if (storedCard) {
+                const bingoCard = JSON.parse(storedCard);
+                const cardContainer = document.getElementById(`card-1`);
+                let cardHtml = '<div class="bingo-card">';
+                let cellIndex = 0;
+
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const value = bingoCard[cellIndex];
+                        if (value === '*') {
+                            cardHtml += `<div class="cell bombo">*</div>`;
+                        } else {
+                            cardHtml += `<div class="cell">${value}</div>`;
+                        }
+                        cellIndex++;
                     }
-                    card.appendChild(cell);
-                    cellIndex++;
-                });
-            });
-        } else {
-            console.error('No se encontró el cartón para el jugador');
-        }
+                }
+                cardHtml += '</div>';
+                cardContainer.innerHTML = cardHtml;
+            } else {
+                console.log('No se encontró el cartón en localStorage');
+            }
+        };
     </script>
 </body>
 </html>
