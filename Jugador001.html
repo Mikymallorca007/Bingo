@@ -30,6 +30,10 @@
         .marcada {
             background-color: #90EE90;
         }
+        .bombero {
+            background-color: #ffcc00;
+            font-size: 0.8em;
+        }
         .boton {
             padding: 10px 20px;
             font-size: 1.2em;
@@ -50,23 +54,36 @@
         // ID del jugador
         const jugadorID = 'jugador001';
 
-        // Cartón de ejemplo (esto debería venir del servidor o ser generado dinámicamente)
-        const carton = [
-            [1, 5, 10, 20, 30, 40, 50, 60],
-            [2, 6, 11, 21, 31, 41, 51, 61],
-            [3, 7, 12, 22, 32, 42, 52, 62],
-            [4, 8, 13, 23, 33, 43, 53, 63],
-            [9, 14, 15, 24, 34, 44, 54, 64],
-            [16, 17, 18, 25, 35, 45, 55, 65],
-            [19, 26, 27, 28, 36, 46, 56, 66],
-            [29, 30, 31, 32, 37, 47, 57, 67]
-        ];
+        // Función para generar un número aleatorio dentro de un rango específico
+        function numeroAleatorio(rangoMin, rangoMax) {
+            return Math.floor(Math.random() * (rangoMax - rangoMin + 1)) + rangoMin;
+        }
 
-        // Función para generar el cartón en el HTML
+        // Función para generar un cartón de bingo aleatorio
         function generarCarton() {
             const cartonDiv = document.getElementById('carton');
+            const carton = [];
+
+            // Generar el cartón respetando los rangos de números
+            for (let i = 0; i < 8; i++) {
+                let columna = [];
+                let rangoMin = i * 10 + 1;
+                let rangoMax = (i + 1) * 10;
+                
+                while (columna.length < 3) {
+                    let numero = numeroAleatorio(rangoMin, rangoMax);
+                    if (!columna.includes(numero)) {
+                        columna.push(numero);
+                    }
+                }
+                carton.push(columna);
+            }
+
+            // Para asegurar que el cartón tenga 15 números, se agregan casillas vacías
+            let casillas = 0;
+            cartonDiv.innerHTML = '';  // Limpiar el cartón actual
             carton.forEach(fila => {
-                fila.forEach(num => {
+                fila.forEach((num, index) => {
                     const casilla = document.createElement('div');
                     casilla.classList.add('casilla');
                     casilla.textContent = num;
@@ -74,26 +91,35 @@
                         casilla.classList.toggle('marcada');
                     };
                     cartonDiv.appendChild(casilla);
+                    casillas++;
                 });
             });
+
+            // Añadir casillas de bombo (vacías) para completar el cartón
+            for (let i = casillas; i < 24; i++) {
+                const casilla = document.createElement('div');
+                casilla.classList.add('casilla', 'bombero');
+                casilla.textContent = 'Bombo';
+                casilla.onclick = function() {
+                    casilla.classList.toggle('marcada');
+                };
+                cartonDiv.appendChild(casilla);
+            }
         }
 
         // Función para enviar la línea cantada
         function enviarLinea() {
-            // Aquí se envía al servidor para notificar al master
             alert("¡He cantado línea!");
-            // Enviar datos al servidor (esto es solo un ejemplo)
             fetch(`/linea/${jugadorID}`, { method: 'POST' });
         }
 
         // Función para enviar el bingo
         function enviarBingo() {
             alert("¡He cantado Bingo!");
-            // Enviar datos al servidor
             fetch(`/bingo/${jugadorID}`, { method: 'POST' });
         }
 
-        // Generar cartón cuando se carga la página
+        // Generar el cartón cuando se carga la página
         generarCarton();
     </script>
 </body>
