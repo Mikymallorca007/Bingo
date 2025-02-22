@@ -46,15 +46,24 @@
 
     <script>
         // Recuperar el cartón guardado en localStorage
-        const cardData = JSON.parse(localStorage.getItem('cartonJugador1'));
+        const cardData = JSON.parse(localStorage.getItem('cartonJugador001'));
 
         if (cardData) {
             const card = document.getElementById('card');
-            cardData.forEach(content => {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.textContent = content;
-                card.appendChild(cell);
+            let cellIndex = 0;
+            cardData.forEach(row => {
+                row.forEach(value => {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (value === '*') {
+                        cell.classList.add('bombo');
+                        cell.textContent = '*';
+                    } else {
+                        cell.textContent = value;
+                    }
+                    card.appendChild(cell);
+                    cellIndex++;
+                });
             });
         } else {
             console.error('No se encontró el cartón para el jugador');
