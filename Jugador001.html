@@ -3,56 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tu Cartón de Bingo</title>
-    <script type="module">
-        // Importar Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    <title>Bingo - Jugador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .carton {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .casilla {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        .marcada {
+            background-color: #90EE90;
+        }
+        .boton {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cartón de Bingo</h1>
+    <div class="carton" id="carton">
+        <!-- Las casillas se llenarán aquí mediante JavaScript -->
+    </div>
 
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAUBhl6WReg9I4Xlt9ie8GXGMvY_z0Wer4",
-            authDomain: "cartones-bingo-online.firebaseapp.com",
-            projectId: "cartones-bingo-online",
-            storageBucket: "cartones-bingo-online.appspot.com",
-            messagingSenderId: "76376812918",
-            appId: "1:76376812918:web:00f9747409931301589e57"
-        };
+    <button class="boton" onclick="enviarLinea()">He cantado línea</button>
+    <button class="boton" onclick="enviarBingo()">He cantado Bingo</button>
 
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    <script>
+        // ID del jugador
+        const jugadorID = 'jugador001';
 
-        function cargarCarton() {
-            const jugadorId = "Jugador001"; // Cambiar por el ID dinámico si es necesario
-            const cartonRef = ref(db, 'cartones/' + jugadorId);
+        // Cartón de ejemplo (esto debería venir del servidor o ser generado dinámicamente)
+        const carton = [
+            [1, 5, 10, 20, 30, 40, 50, 60],
+            [2, 6, 11, 21, 31, 41, 51, 61],
+            [3, 7, 12, 22, 32, 42, 52, 62],
+            [4, 8, 13, 23, 33, 43, 53, 63],
+            [9, 14, 15, 24, 34, 44, 54, 64],
+            [16, 17, 18, 25, 35, 45, 55, 65],
+            [19, 26, 27, 28, 36, 46, 56, 66],
+            [29, 30, 31, 32, 37, 47, 57, 67]
+        ];
 
-            get(cartonRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const datos = snapshot.val();
-                    mostrarCarton(datos.carton);
-                } else {
-                    document.getElementById("carton").innerHTML = "No se ha encontrado tu cartón. Vuelve a generarlo.";
-                }
+        // Función para generar el cartón en el HTML
+        function generarCarton() {
+            const cartonDiv = document.getElementById('carton');
+            carton.forEach(fila => {
+                fila.forEach(num => {
+                    const casilla = document.createElement('div');
+                    casilla.classList.add('casilla');
+                    casilla.textContent = num;
+                    casilla.onclick = function() {
+                        casilla.classList.toggle('marcada');
+                    };
+                    cartonDiv.appendChild(casilla);
+                });
             });
         }
 
-        function mostrarCarton(carton) {
-            let html = "<table border='1'>";
-            for (let i = 0; i < carton.length; i++) {
-                if (i % 8 === 0) html += "<tr>";
-                html += `<td>${carton[i]}</td>`;
-                if (i % 8 === 7) html += "</tr>";
-            }
-            html += "</table>";
-            document.getElementById("carton").innerHTML = html;
+        // Función para enviar la línea cantada
+        function enviarLinea() {
+            // Aquí se envía al servidor para notificar al master
+            alert("¡He cantado línea!");
+            // Enviar datos al servidor (esto es solo un ejemplo)
+            fetch(`/linea/${jugadorID}`, { method: 'POST' });
         }
 
-        window.onload = cargarCarton;
+        // Función para enviar el bingo
+        function enviarBingo() {
+            alert("¡He cantado Bingo!");
+            // Enviar datos al servidor
+            fetch(`/bingo/${jugadorID}`, { method: 'POST' });
+        }
+
+        // Generar cartón cuando se carga la página
+        generarCarton();
     </script>
-</head>
-<body>
-    <h1>Tu Cartón de Bingo</h1>
-    <div id="carton">Cargando...</div>
 </body>
 </html>
