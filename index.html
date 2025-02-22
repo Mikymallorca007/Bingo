@@ -3,98 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo 80 bolas</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-</head>
-<body>
-    <h1>Generar Cartón</h1>
-    <div>
-        <label for="numPlayers">Número de jugadores:</label>
-        <input type="number" id="numPlayers" min="1" max="100" value="1">
-        <button onclick="createPlayers()">Configurar Jugadores</button>
-    </div>
-    <div class="player-list" id="playerList"></div>
-
+    <title>Bingo - Generar Cartón</title>
     <script type="module">
-        // Firebase configuration
-        import { initializeApp } from "firebase/app";
-        import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+        // Importar Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAUBhl6WReg9I4Xlt9ie8GXGMvY_z0Wer4",
             authDomain: "cartones-bingo-online.firebaseapp.com",
             projectId: "cartones-bingo-online",
             storageBucket: "cartones-bingo-online.appspot.com",
             messagingSenderId: "76376812918",
-            appId: "1:76376812918:web:00f9747409931301589e57",
-            measurementId: "G-WDDN59LS3C"
+            appId: "1:76376812918:web:00f9747409931301589e57"
         };
 
+        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getDatabase(app);
 
-        function createPlayers() {
-            const numPlayers = document.getElementById('numPlayers').value;
-            const playerList = document.getElementById('playerList');
-            playerList.innerHTML = '';
-
-            for (let i = 1; i <= numPlayers; i++) {
-                const playerDiv = document.createElement('div');
-                playerDiv.innerHTML = `
-                    <h3>Jugador ${i}</h3>
-                    <div class="input-group">
-                        <label for="playerName${i}">Nombre:</label>
-                        <input type="text" id="playerName${i}" placeholder="Nombre del jugador ${i}">
-                    </div>
-                    <div class="input-group">
-                        <label for="playerPhone${i}">Número de Teléfono:</label>
-                        <input type="text" id="playerPhone${i}" placeholder="Número del jugador ${i}">
-                    </div>
-                    <button onclick="generateCard(${i})">Generar Cartón</button>
-                    <div id="card-${i}" style="margin-top: 10px;"></div>
-                `;
-                playerList.appendChild(playerDiv);
-            }
-        }
-
-        async function saveCard(playerId, cardData) {
-            const playerRef = doc(db, "cartones", `jugador_${playerId}`);
-            await setDoc(playerRef, { card: cardData });
-        }
-
-        async function getCard(playerId) {
-            const playerRef = doc(db, "cartones", `jugador_${playerId}`);
-            const docSnap = await getDoc(playerRef);
-            if (docSnap.exists()) {
-                return docSnap.data().card;
-            } else {
-                alert("No se encontró el cartón.");
-                return null;
-            }
-        }
-
-        function generateCard(playerId) {
-            const playerName = document.getElementById(`playerName${playerId}`).value;
-            const playerPhone = document.getElementById(`playerPhone${playerId}`).value;
-            
-            if (!playerName || !playerPhone) {
-                alert('Por favor, ingresa el nombre y el número de teléfono del jugador');
-                return;
-            }
-
-            const bingoCard = generateBingoCard();
-            document.getElementById(`card-${playerId}`).innerHTML = bingoCard.html;
-            
-            saveCard(playerId, bingoCard.data);
-
-            const message = `Hola ${playerName}, tu cartón de bingo es:\n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
-            const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
-            alert(`Cartón generado. Puedes enviar el cartón por WhatsApp: ${whatsappLink}`);
-        }
-
-        function generateBingoCard() {
-            let numbers = [];
+        function generarCarton() {
+            let carton = [];
             for (let col = 0; col < 8; col++) {
                 let min = col * 10 + 1;
                 let max = col === 7 ? 80 : (col + 1) * 10;
@@ -102,31 +32,28 @@
                     .sort(() => Math.random() - 0.5)
                     .slice(0, 5)
                     .sort((a, b) => a - b);
-                numbers.push(colNumbers);
+                carton.push(...colNumbers);
             }
 
-            let bomboPositions = new Set();
-            while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
-
-            let cellIndex = 0;
-            let cardHtml = '<div class="bingo-card">';
-            let cardData = [];
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (bomboPositions.has(cellIndex)) {
-                        cardHtml += `<div class="cell bombo">*</div>`;
-                        cardData.push('*');
-                    } else {
-                        let number = numbers[col].shift();
-                        cardHtml += `<div class="cell">${number}</div>`;
-                        cardData.push(number);
-                    }
-                    cellIndex++;
-                }
+            let jugadorId = document.getElementById("jugadorId").value;
+            if (!jugadorId) {
+                alert("Introduce un número de jugador.");
+                return;
             }
-            cardHtml += '</div>';
-            return { html: cardHtml, data: cardData };
+
+            // Guardar cartón en Firebase
+            set(ref(db, 'cartones/' + jugadorId), { carton });
+
+            alert("Cartón generado para Jugador " + jugadorId);
         }
+        
+        window.generarCarton = generarCarton;
     </script>
+</head>
+<body>
+    <h1>Generador de Cartón de Bingo</h1>
+    <label>Jugador ID:</label>
+    <input type="text" id="jugadorId">
+    <button onclick="generarCarton()">Generar Cartón</button>
 </body>
 </html>
