@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartón de Bingo - Jugador 001</title>
+    <title>Tu Cartón de Bingo</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
         .bingo-card {
@@ -29,38 +29,39 @@
             font-weight: bold;
             border: 1px solid black;
         }
+        .bombo {
+            background: url('bombo.png') center/contain no-repeat;
+        }
     </style>
 </head>
 <body>
-    <h1>Cartón de Bingo - Jugador 001</h1>
+    <h1>Tu Cartón de Bingo</h1>
     <div id="bingoCardContainer"></div>
 
     <script>
         window.onload = function() {
-            // Recuperar cartón de localStorage
-            let bingoCardData = localStorage.getItem('cartonJugador1');
-            
-            if (bingoCardData) {
-                bingoCardData = JSON.parse(bingoCardData);
-                displayBingoCard(bingoCardData);
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardData = urlParams.get('card').split(',');
+
+            if (cardData) {
+                const cardContainer = document.getElementById('bingoCardContainer');
+                let cardHtml = '<div class="bingo-card">';
+
+                let cellIndex = 0;
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const cellData = cardData[cellIndex];
+                        cardHtml += `<div class="cell">${cellData === "*" ? "*" : cellData}</div>`;
+                        cellIndex++;
+                    }
+                }
+
+                cardHtml += '</div>';
+                cardContainer.innerHTML = cardHtml;
             } else {
-                alert('No se ha encontrado el cartón en localStorage.');
+                alert('No se ha encontrado un cartón válido en la URL.');
             }
         };
-
-        function displayBingoCard(data) {
-            const container = document.getElementById('bingoCardContainer');
-            let cardHtml = '<div class="bingo-card">';
-            
-            // Mostrar el cartón con los números recuperados
-            for (let i = 0; i < 24; i++) {
-                let value = data[i] === '*' ? '*' : data[i];
-                cardHtml += `<div class="cell">${value}</div>`;
-            }
-            
-            cardHtml += '</div>';
-            container.innerHTML = cardHtml;
-        }
     </script>
 </body>
 </html>
