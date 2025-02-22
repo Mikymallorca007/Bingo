@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartón de Bingo</title>
+    <title>Cartón de Bingo - Jugador 001</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
-        .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
-        h1 { color: #ff6600; }
         .bingo-card {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -34,37 +32,35 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tu Cartón de Bingo</h1>
-        <div id="card-1"></div>
-    </div>
+    <h1>Cartón de Bingo - Jugador 001</h1>
+    <div id="bingoCardContainer"></div>
 
     <script>
         window.onload = function() {
-            const playerId = 1;  // Cambia este valor según el jugador que quieras cargar
-            const storedCard = localStorage.getItem(`cartonJugador${playerId}`);
-
-            console.log('Cartón cargado desde localStorage:', storedCard);
-
-            if (storedCard) {
-                const bingoCard = JSON.parse(storedCard);
-                const cardContainer = document.getElementById(`card-1`);
-                let cardHtml = '<div class="bingo-card">';
-                let cellIndex = 0;
-
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        const value = bingoCard[cellIndex];
-                        cardHtml += `<div class="cell">${value}</div>`;  // Rellenamos todos los espacios con números
-                        cellIndex++;
-                    }
-                }
-                cardHtml += '</div>';
-                cardContainer.innerHTML = cardHtml;
+            // Recuperar cartón de localStorage
+            let bingoCardData = localStorage.getItem('cartonJugador1');
+            
+            if (bingoCardData) {
+                bingoCardData = JSON.parse(bingoCardData);
+                displayBingoCard(bingoCardData);
             } else {
-                console.log('No se encontró el cartón en localStorage');
+                alert('No se ha encontrado el cartón en localStorage.');
             }
         };
+
+        function displayBingoCard(data) {
+            const container = document.getElementById('bingoCardContainer');
+            let cardHtml = '<div class="bingo-card">';
+            
+            // Mostrar el cartón con los números recuperados
+            for (let i = 0; i < 24; i++) {
+                let value = data[i] === '*' ? '*' : data[i];
+                cardHtml += `<div class="cell">${value}</div>`;
+            }
+            
+            cardHtml += '</div>';
+            container.innerHTML = cardHtml;
+        }
     </script>
 </body>
 </html>
