@@ -65,7 +65,7 @@
                     <div class="bingo-card" id="card-${i}">
                         <!-- El cartón de cada jugador se generará aquí -->
                     </div>
-                    <a href="Jugador${String(i).padStart(3, '0')}.html">Ver Cartón</a>
+                    <a href="Jugador${String(i).padStart(3, '0')}.html?carton=${encodeURIComponent(generateCartonData(i))}">Ver Cartón</a>
                 `;
                 playerList.appendChild(playerDiv);
                 generateBingoCard(i); // Generar el cartón para cada jugador
@@ -104,8 +104,8 @@
                 }
             }
 
-            // Guardar el cartón en localStorage para que el jugador lo vea después
-            localStorage.setItem(`cartonJugador${playerId}`, JSON.stringify(cardData));
+            // Generar un string con los datos del cartón
+            return JSON.stringify(cardData);
         }
     </script>
 </body>
