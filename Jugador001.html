@@ -6,6 +6,8 @@
     <title>Tu Cartón de Bingo</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
+        h1 { color: #ff6600; }
         .bingo-card {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -35,33 +37,39 @@
     </style>
 </head>
 <body>
-    <h1>Tu Cartón de Bingo</h1>
-    <div id="bingoCardContainer"></div>
+    <div class="container">
+        <h1>Tu Cartón de Bingo</h1>
+        <div id="card-container"></div>
+    </div>
 
     <script>
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const cardData = urlParams.get('card').split(',');
-
-            if (cardData) {
-                const cardContainer = document.getElementById('bingoCardContainer');
-                let cardHtml = '<div class="bingo-card">';
-
-                let cellIndex = 0;
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        const cellData = cardData[cellIndex];
-                        cardHtml += `<div class="cell">${cellData === "*" ? "*" : cellData}</div>`;
-                        cellIndex++;
-                    }
-                }
-
-                cardHtml += '</div>';
-                cardContainer.innerHTML = cardHtml;
+            // Recupera el cartón desde sessionStorage
+            const bingoCardData = JSON.parse(sessionStorage.getItem('cartonJugador1'));
+            if (bingoCardData) {
+                const cardHtml = generateCardFromData(bingoCardData);
+                document.getElementById('card-container').innerHTML = cardHtml;
             } else {
-                alert('No se ha encontrado un cartón válido en la URL.');
+                document.getElementById('card-container').innerHTML = 'No se ha encontrado tu cartón. Vuelve a generarlo.';
             }
         };
+
+        function generateCardFromData(cardData) {
+            let cardHtml = '<div class="bingo-card">';
+            let cellIndex = 0;
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (cardData[cellIndex] === '*') {
+                        cardHtml += `<div class="cell bombo">*</div>`;
+                    } else {
+                        cardHtml += `<div class="cell">${cardData[cellIndex]}</div>`;
+                    }
+                    cellIndex++;
+                }
+            }
+            cardHtml += '</div>';
+            return cardHtml;
+        }
     </script>
 </body>
 </html>
