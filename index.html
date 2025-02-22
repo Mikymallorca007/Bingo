@@ -3,74 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel del Master - Bingo 80 bolas</title>
-    <script type="module">
-        // Import Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAUBhl6W-Reg9I4Xlt9ie8GXGMvY_z0Wer4",
-            authDomain: "cartones-bingo-online.firebaseapp.com",
-            databaseURL: "https://cartones-bingo-online-default-rtdb.firebaseio.com/",
-            projectId: "cartones-bingo-online",
-            storageBucket: "cartones-bingo-online.appspot.com",
-            messagingSenderId: "76376812918",
-            appId: "1:76376812918:web:00f9747409931301589e57",
-            measurementId: "G-WDDN59LS3C"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Función para generar el cartón de bingo
-        function generateBingoCard(playerId) {
-            let numbers = [];
-            for (let col = 0; col < 8; col++) {
-                let min = col * 10 + 1;
-                let max = col === 7 ? 80 : (col + 1) * 10;
-                let colNumbers = Array.from({ length: max - min + 1 }, (_, index) => min + index)
-                    .sort(() => Math.random() - 0.5)
-                    .slice(0, 5)
-                    .sort((a, b) => a - b);
-                numbers.push(colNumbers);
-            }
-            
-            let cardData = [];
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 8; col++) {
-                    cardData.push(numbers[col][row]);
-                }
-            }
-            
-            set(ref(db, `cartones/${playerId}`), { card: cardData })
-                .then(() => alert(`Cartón generado para Jugador ${playerId}`))
-                .catch(error => console.error("Error al guardar en Firebase: ", error));
-        }
-
-        // Función para obtener y mostrar un cartón
-        function loadBingoCard(playerId) {
-            get(child(ref(db), `cartones/${playerId}`)).then(snapshot => {
-                if (snapshot.exists()) {
-                    console.log("Cartón cargado: ", snapshot.val().card);
-                } else {
-                    console.log("No se encontró cartón para este jugador");
-                }
-            }).catch(error => console.error("Error al cargar datos: ", error));
-        }
-
-        // Exportar funciones globalmente
-        window.generateBingoCard = generateBingoCard;
-        window.loadBingoCard = loadBingoCard;
-    </script>
+    <title>Master Bingo</title>
+    <style>
+        /* Estilos para el cartón del master */
+    </style>
 </head>
 <body>
-    <h1>Panel del Master - Bingo 80 bolas</h1>
-    <label for="playerId">ID del Jugador:</label>
-    <input type="text" id="playerId" placeholder="Ingrese el ID">
-    <button onclick="generateBingoCard(document.getElementById('playerId').value)">Generar Cartón</button>
-    <button onclick="loadBingoCard(document.getElementById('playerId').value)">Cargar Cartón</button>
+    <h1>Cartón de Bingo del Jugador</h1>
+    <div id="cartonMaster"></div>
+
+    <button id="generarCarton">Generar Cartón</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Recibir el cartón del jugador
+        socket.on('cartonParaMaster', (carton) => {
+            mostrarCartonMaster(carton);
+        });
+
+        // Mostrar el cartón en la vista del master
+        function mostrarCartonMaster(carton) {
+            const divCarton = document.getElementById('cartonMaster');
+            divCarton.innerHTML = ''; // Limpiar el div
+
+            carton.forEach(fila => {
+                const filaDiv = document.createElement('div');
+                fila.forEach(num => {
+                    const casilla = document.createElement('div');
+                    casilla.textContent = num;
+                    casilla.classList.add('casilla');
+                    filaDiv.appendChild(casilla);
+                });
+                divCarton.appendChild(filaDiv);
+            });
+        }
+
+        // Generar un cartón para el jugador al hacer clic en el botón
+        document.getElementById('generarCarton').addEventListener('click', () => {
+            socket.emit('generarCarton');
+        });
+    </script>
 </body>
 </html>
