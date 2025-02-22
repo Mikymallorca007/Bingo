@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel del Master - Bingo 80 bolas</title>
+    <title>Panel del Master - *ingo 80 bolas</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
         .container { width: 80%; margin: 0 auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }
@@ -34,12 +34,14 @@
             font-weight: bold;
             border: 1px solid black;
         }
-        .bombo { background: url('bombo.png') center/contain no-repeat; }
+        .bombo {
+            background: url('bombo.png') center/contain no-repeat;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Panel del Master - Bingo 80 bolas</h1>
+        <h1>Panel del Master - *ingo 80 bolas</h1>
         <div>
             <label for="numPlayers">Número de jugadores:</label>
             <input type="number" id="numPlayers" min="1" max="100" value="1">
@@ -84,13 +86,13 @@
                 return;
             }
 
-            const cardData = generateBingoCard();
-            localStorage.setItem(`Jugador${String(playerId).padStart(3, '0')}`, JSON.stringify(cardData));
+            const cardHtml = generateBingoCard();
+            document.getElementById(`card-${playerId}`).innerHTML = cardHtml;
             
-            const cardContainer = document.getElementById(`card-${playerId}`);
-            cardContainer.innerHTML = renderBingoCard(cardData);
-
-            const message = `Hola ${playerName}, tu cartón de bingo es: \n${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
+            localStorage.setItem(`Jugador${String(playerId).padStart(3, '0')}`, cardHtml);
+            
+            const message = `Hola ${playerName}, tu cartón de bingo es:
+${window.location.href}Jugador${String(playerId).padStart(3, '0')}.html`;
             const whatsappLink = `https://wa.me/${playerPhone}?text=${encodeURIComponent(message)}`;
             document.getElementById(`whatsappLink-${playerId}`).innerHTML = `<a href="${whatsappLink}" target="_blank">Enviar por WhatsApp</a>`;
         }
@@ -109,17 +111,12 @@
 
             let bomboPositions = new Set();
             while (bomboPositions.size < 9) bomboPositions.add(Math.floor(Math.random() * 24));
-            
-            return { numbers, bomboPositions: Array.from(bomboPositions) };
-        }
 
-        function renderBingoCard(cardData) {
-            let { numbers, bomboPositions } = cardData;
             let cellIndex = 0;
             let cardHtml = '<div class="bingo-card">';
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    if (bomboPositions.includes(cellIndex)) {
+                    if (bomboPositions.has(cellIndex)) {
                         cardHtml += `<div class="cell bombo">*</div>`;
                     } else {
                         cardHtml += `<div class="cell">${numbers[col].shift()}</div>`;
