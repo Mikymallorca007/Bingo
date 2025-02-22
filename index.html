@@ -34,9 +34,6 @@
             font-weight: bold;
             border: 1px solid black;
         }
-        .bombo {
-            background: url('bombo.png') center/contain no-repeat;
-        }
     </style>
 </head>
 <body>
@@ -118,47 +115,15 @@
             let cardData = [];
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
-                    if (bomboPositions.has(cellIndex)) {
-                        cardHtml += `<div class="cell bombo">*</div>`;
-                        cardData.push('*');
-                    } else {
-                        let number = numbers[col].shift();
-                        cardHtml += `<div class="cell">${number}</div>`;
-                        cardData.push(number);
-                    }
+                    let number = numbers[col].shift();
+                    cardHtml += `<div class="cell">${number}</div>`;
+                    cardData.push(number);
                     cellIndex++;
                 }
             }
             cardHtml += '</div>';
             return { html: cardHtml, data: cardData };
         }
-
-        // Al cargar la página, leer el cartón desde localStorage y mostrarlo
-        window.onload = function() {
-            const playerId = 1;  // Cambia este valor según el jugador que quieras cargar
-            const storedCard = localStorage.getItem(`cartonJugador${playerId}`);
-
-            if (storedCard) {
-                const bingoCard = JSON.parse(storedCard);
-                const cardContainer = document.getElementById(`card-${playerId}`);
-                let cardHtml = '<div class="bingo-card">';
-                let cellIndex = 0;
-
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        const value = bingoCard[cellIndex];
-                        if (value === '*') {
-                            cardHtml += `<div class="cell bombo">*</div>`;
-                        } else {
-                            cardHtml += `<div class="cell">${value}</div>`;
-                        }
-                        cellIndex++;
-                    }
-                }
-                cardHtml += '</div>';
-                cardContainer.innerHTML = cardHtml;
-            }
-        };
     </script>
 </body>
 </html>
