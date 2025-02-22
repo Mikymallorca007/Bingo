@@ -45,12 +45,13 @@
     </div>
 
     <script>
-        // Recuperar el cartón guardado en localStorage
-        const cardData = JSON.parse(localStorage.getItem('cartonJugador1'));
+        // Recuperar los datos del cartón de la URL
+        const params = new URLSearchParams(window.location.search);
+        const cartonData = JSON.parse(decodeURIComponent(params.get('carton')));
 
-        if (cardData) {
+        if (cartonData) {
             const card = document.getElementById('card');
-            cardData.forEach(content => {
+            cartonData.forEach(content => {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.textContent = content;
