@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
     <title>BINGO ALDEA BELLA</title>
     
     <meta name="mobile-web-app-capable" content="yes">
@@ -12,6 +12,7 @@
 
     <style>
         * { box-sizing: border-box; }
+        
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #1e272e; 
@@ -19,8 +20,9 @@
             margin: 0; 
             padding: 5px;
             height: 100vh; 
+            width: 100vw;
             display: flex;
-            flex-direction: row; 
+            flex-direction: row; /* Bola a la izquierda, cartón a la derecha */
             overflow: hidden; 
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -28,63 +30,68 @@
             touch-action: manipulation;
         }
 
-        /* BARRA LATERAL IZQUIERDA */
+        /* BARRA LATERAL IZQUIERDA (PARA LA BOLA) */
         aside {
-            width: 85px;
+            width: 15vw; /* Ancho proporcional al girar el móvil */
+            min-width: 80px;
             display: flex;
             flex-direction: column;
             justify-content: space-around;
             align-items: center;
             background: #2f3542;
             border-radius: 12px;
-            margin-right: 8px;
+            margin-right: 10px;
             padding: 10px 0;
             flex-shrink: 0;
             border: 2px solid #485460;
         }
 
         .side-label {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             font-weight: bold;
             color: #2ecc71;
             text-transform: uppercase;
+            margin-bottom: 5px;
         }
 
         .current-ball {
             background: #ffffff;
             color: #2f3542;
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 900;
-            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 0 0 15px rgba(46, 204, 113, 0.3);
+            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 0 0 15px rgba(46, 204, 113, 0.4);
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .btn-new {
-            background: #27ae60;
+            background: #c0392b;
             color: white;
             border: none;
-            width: 65px;
-            height: 65px;
-            border-radius: 15px;
-            font-size: 0.75rem;
+            width: 70px;
+            height: 50px;
+            border-radius: 10px;
+            font-size: 0.7rem;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 0 #1e8449;
-            text-align: center;
-            line-height: 1.2;
+            box-shadow: 0 4px 0 #922b21;
         }
         .btn-new:active {
             transform: translateY(2px);
-            box-shadow: 0 2px 0 #1e8449;
+            box-shadow: 0 2px 0 #922b21;
         }
 
-        main { flex-grow: 1; height: 100%; display: flex; }
+        /* CONTENEDOR DEL CARTÓN */
+        main { 
+            flex-grow: 1; 
+            height: 100%; 
+            display: flex; 
+        }
 
         .ticket-container { 
             background: #d2dae2; 
@@ -114,9 +121,10 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: clamp(1.4rem, 8vh, 2.5rem); 
+            font-size: clamp(1.2rem, 10vh, 2.5rem); /* Tamaño dinámico según altura pantalla */
             font-weight: bold; 
             border-radius: 4px;
+            cursor: pointer;
         }
 
         .cell.empty { background: #a4b0be; }
@@ -132,9 +140,9 @@
     <aside>
         <div style="text-align: center;">
             <div class="side-label">BOLA</div>
-            <div class="current-ball" id="ball-display">--</div>
+            <div id="ball-display" class="current-ball">--</div>
         </div>
-        <button class="btn-new" onclick="window.location.reload()">NUEVA<br>PARTIDA</button>
+        <button class="btn-new" onclick="window.location.reload()">NUEVO<br>CARTÓN</button>
     </aside>
 
     <main>
@@ -147,7 +155,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <script>
-        // CONFIGURACIÓN DE TU FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
             authDomain: "bingoaldeabella.firebaseapp.com",
@@ -161,64 +168,39 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Escuchar la última bola en tiempo real
         database.ref('bingo/ultimaBola').on('value', (snapshot) => {
             const numero = snapshot.val();
             if (numero !== null && numero !== 0) {
                 const display = document.getElementById('ball-display');
                 display.innerText = numero;
-                display.style.transform = "scale(1.4)";
+                display.style.transform = "scale(1.3)";
                 setTimeout(() => display.style.transform = "scale(1)", 200);
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             }
         });
 
-        function validarLinea(linea) {
-            let seguidos = 0;
-            for (let x of linea) {
-                if (x === 0) seguidos++; else seguidos = 0;
-                if (seguidos > 2) return false;
-            }
-            return true;
-        }
-
+        // Lógica del cartón (80 números, 4x8)
         function generarCarton80() {
             const grid = document.getElementById('bingo-grid');
             grid.innerHTML = ''; 
-            let matrizEstructura = [];
-            let esValidaTotal = false;
-
-            while (!esValidaTotal) {
-                matrizEstructura = [];
-                for (let f = 0; f < 4; f++) {
-                    let fila;
-                    do {
-                        fila = [1, 1, 1, 1, 1, 0, 0, 0];
-                        fila.sort(() => Math.random() - 0.5);
-                    } while (!validarLinea(fila));
-                    matrizEstructura.push(fila);
-                }
-                esValidaTotal = true;
-                for (let c = 0; c < 8; c++) {
-                    let cerosVerticales = 0;
-                    for (let f = 0; f < 4; f++) {
-                        if (matrizEstructura[f][c] === 0) cerosVerticales++; else cerosVerticales = 0;
-                        if (cerosVerticales > 2) { esValidaTotal = false; break; }
-                    }
-                    if (!esValidaTotal) break;
-                }
-            }
-
+            
             let matrizFinal = Array.from({ length: 4 }, () => Array(8).fill(null));
+            
             for (let c = 0; c < 8; c++) {
                 let inicio = (c * 10) + 1;
                 let fin = (c * 10) + 10;
                 let posibles = [];
                 for (let n = inicio; n <= fin; n++) posibles.push(n);
                 posibles.sort(() => Math.random() - 0.5);
-                let filasConNumero = [];
-                for (let f = 0; f < 4; f++) { if (matrizEstructura[f][c] === 1) filasConNumero.push(f); }
-                let valoresElegidos = posibles.slice(0, filasConNumero.length).sort((a, b) => a - b);
-                filasConNumero.forEach((fIdx, i) => { matrizFinal[fIdx][c] = valoresElegidos[i]; });
+                
+                // Ponemos 2 números por columna para asegurar 16 números (Bingo 80)
+                let seleccionados = posibles.slice(0, 2).sort((a, b) => a - b);
+                let filas = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, 2).sort();
+                
+                filas.forEach((fIdx, i) => {
+                    matrizFinal[fIdx][c] = seleccionados[i];
+                });
             }
 
             for (let f = 0; f < 4; f++) {
@@ -230,23 +212,21 @@
                     } else {
                         div.className = 'cell';
                         div.innerText = valor;
+                        
                         let timer;
-                        const tiempoRequerido = 200; // Seguridad de 0.2 segundos
-
                         const iniciarAccion = (e) => {
                             e.preventDefault();
                             timer = setTimeout(() => {
                                 div.classList.toggle('marked');
-                                if (navigator.vibrate) navigator.vibrate(35);
-                            }, tiempoRequerido);
+                                if (navigator.vibrate) navigator.vibrate(40);
+                            }, 200); // Tus 200ms de seguridad
                         };
-                        const cancelarAccion = () => { clearTimeout(timer); };
+                        const cancelarAccion = () => clearTimeout(timer);
 
                         div.addEventListener('touchstart', iniciarAccion);
                         div.addEventListener('touchend', cancelarAccion);
                         div.addEventListener('mousedown', iniciarAccion);
                         div.addEventListener('mouseup', cancelarAccion);
-                        div.addEventListener('mouseleave', cancelarAccion);
                     }
                     grid.appendChild(div);
                 }
