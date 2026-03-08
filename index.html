@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BINGO ALDEA BELLA</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -141,7 +147,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <script>
-        // CONFIGURACIÓN REAL DE TU PROYECTO
+        // CONFIGURACIÓN DE TU FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
             authDomain: "bingoaldeabella.firebaseapp.com",
@@ -152,27 +158,20 @@
             appId: "1:911712071246:web:52e2f5edb30e0372471d1f"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Escuchar cambios en la bola desde Android Studio
         database.ref('bingo/ultimaBola').on('value', (snapshot) => {
             const numero = snapshot.val();
-            if (numero !== null) {
+            if (numero !== null && numero !== 0) {
                 const display = document.getElementById('ball-display');
                 display.innerText = numero;
-                
-                // Efecto visual de rebote
                 display.style.transform = "scale(1.4)";
                 setTimeout(() => display.style.transform = "scale(1)", 200);
-                
-                // Vibración para el cliente
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             }
         });
 
-        // --- Lógica del Cartón ---
         function validarLinea(linea) {
             let seguidos = 0;
             for (let x of linea) {
@@ -232,7 +231,7 @@
                         div.className = 'cell';
                         div.innerText = valor;
                         let timer;
-                        const tiempoRequerido = 200; // Tus 200ms de seguridad
+                        const tiempoRequerido = 200; // Seguridad de 0.2 segundos
 
                         const iniciarAccion = (e) => {
                             e.preventDefault();
