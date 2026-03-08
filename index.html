@@ -2,159 +2,134 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BINGO ALDEA BELLA</title>
     <style>
         :root { --bg: #0f0c29; --accent: #00d2ff; --win: #2ecc71; --fail: #e74c3c; }
         * { box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
-            color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw;
-            display: flex; flex-direction: row; overflow: hidden;
-            -webkit-user-select: none; user-select: none; touch-action: manipulation;
-        }
-
-        /* Lateral con Bolas */
-        aside {
-            width: 20vw; min-width: 100px; display: flex; flex-direction: column;
-            align-items: center; background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px; margin-right: 10px; padding: 10px 5px;
-            backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .bola-cantada {
-            background: white; color: #1e272e; width: 80px; height: 80px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 2.8rem; font-weight: 900; border: 4px solid var(--win);
-            box-shadow: 0 0 20px var(--win); margin-bottom: 10px;
-        }
-        .historial-bola {
-            background: rgba(0, 0, 0, 0.3); color: #ccc; width: 40px; height: 40px;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; margin-top: 5px; border: 1px solid #444;
-        }
-
-        /* Cartón de Juego */
-        main { flex-grow: 1; height: 100%; display: flex; }
-        .grid-bingo { 
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 5px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 10px; width: 100%; height: 100%;
-        }
-        .cell { 
-            background: #fdfdfd; color: #2c3e50; display: flex; align-items: center; justify-content: center; 
-            font-size: 2.2rem; font-weight: 800; border-radius: 6px; transition: all 0.2s;
-            box-shadow: 0 4px 0 #bdc3c7;
-        }
-        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(to right, #0f0c29, #302b63, #24243e); color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; }
         
-        /* Estados de Marcado */
+        aside { width: 22vw; background: rgba(255, 255, 255, 0.1); border-radius: 15px; margin-right: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px); }
+        .bola-cantada { background: white; color: #1e272e; width: 75px; height: 75px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; }
+        .historial { background: rgba(0,0,0,0.3); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; }
+
+        main { flex-grow: 1; height: 100%; }
+        .grid-bingo { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; width: 100%; height: 100%; }
+        .cell { background: white; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 0 #bdc3c7; }
+        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
-        /* Pantalla de Bloqueo / Admisión */
-        #bloqueo { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center;
-        }
-        .brand-box {
-            background: rgba(255,255,255,0.1); padding: 40px; border-radius: 25px;
-            border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
-            max-width: 80%;
-        }
-        .brand-title { font-size: 3rem; margin: 0; color: var(--accent); text-shadow: 0 0 10px var(--accent); font-weight: 900; }
-        .brand-subtitle { font-size: 1.2rem; color: #fff; margin-top: 10px; opacity: 0.8; }
+        #bloqueo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e3c72; z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .status-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); }
     </style>
 </head>
 <body>
 
     <div id="bloqueo">
-        <div class="brand-box">
-            <h1 class="brand-title">BINGO</h1>
-            <h2 style="margin:0; font-size: 1.5rem; color:white;">ALDEA BELLA</h2>
-            <div id="bloqueo-status" class="brand-subtitle">Conectando con el Master...</div>
+        <div class="status-box">
+            <h1 id="bloqueo-status" style="font-size: 2.5rem; margin:0;">CONECTANDO...</h1>
         </div>
     </div>
 
     <aside>
-        <div style="font-size: 0.7rem; color: var(--accent); font-weight: bold; letter-spacing: 2px;">SALIDA</div>
         <div id="bola-viva" class="bola-cantada">--</div>
-        <div id="h-1" class="historial-bola">--</div>
-        <div id="h-2" class="historial-bola">--</div>
+        <div id="h-1" class="historial">--</div>
+        <div id="h-2" class="historial">--</div>
     </aside>
 
     <main><div class="grid-bingo" id="bingo-grid"></div></main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
-            databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "bingoaldeabella"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        let miId = localStorage.getItem('aldea_uid') || 'u' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('aldea_uid', miId);
+        let miNombre = localStorage.getItem('aldea_nombre');
         let bolasEnJuego = new Set();
         let yaHuboLinea = false;
         let miMatriz = [];
-        let miId = localStorage.getItem('aldea_uid') || 'u' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('aldea_uid', miId);
 
-        function checkAcceso() {
-            // Verificamos nombres en uso antes de nada
-            db.ref('bingo/solicitudes').once('value', snapAll => {
-                const todas = snapAll.val() || {};
+        db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+            const s = snap.val();
+            if(!s) {
+                if(!miNombre) { miNombre = prompt("Dime tu nombre:").toUpperCase(); localStorage.setItem('aldea_nombre', miNombre); }
+                db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente" });
+            } else if(s.estado === "pendiente") {
+                document.getElementById('bloqueo').style.display = 'flex';
+                document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br>Espera al Master.";
+            } else {
+                document.getElementById('bloqueo').style.display = 'none';
+                if(miMatriz.length === 0) cargarJuego();
+            }
+        });
 
-                db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                    const s = snap.val();
-                    
-                    if(!s) {
-                        let n = prompt("Tu nombre para el Bingo:");
-                        if(n) {
-                            n = n.toUpperCase().trim();
-                            // Verificar si el nombre ya existe en otro ID
-                            const nombresOcupados = Object.values(todas).map(u => u.nombre);
-                            if(nombresOcupados.includes(n)) {
-                                alert("Ese nombre ya está en uso. Elige otro.");
-                                location.reload();
-                            } else {
-                                db.ref('bingo/solicitudes/' + miId).set({ nombre: n, estado: "pendiente" });
-                            }
-                        }
-                    } else if(s.estado === "pendiente") {
-                        document.getElementById('bloqueo').style.display = 'flex';
-                        document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br><br>Espera a que el Master te acepte para la partida.";
-                        localStorage.removeItem('mi_carton_data'); 
-                        miMatriz = [];
-                    } else if(s.estado === "autorizado") {
-                        document.getElementById('bloqueo').style.display = 'none';
-                        if(miMatriz.length === 0) iniciar();
+        db.ref('bingo/estado').on('value', snap => {
+            const est = snap.val();
+            const status = document.getElementById('bloqueo-status');
+            if(est && est.startsWith("CUENTA_")) {
+                const seg = est.split("_")[1];
+                document.getElementById('bloqueo').style.display = 'flex';
+                status.innerHTML = `<span style="font-size:5rem; color:yellow;">${seg}</span>`;
+                if(navigator.vibrate) navigator.vibrate(50);
+            } 
+            else if(est === "JUGANDO") {
+                if(document.getElementById('bloqueo').style.display === 'flex') { if(navigator.vibrate) navigator.vibrate(1000); }
+                document.getElementById('bloqueo').style.display = 'none';
+            }
+            else if(est === "ESPERANDO_INICIO") location.reload();
+        });
+
+        function cargarJuego() {
+            let save = localStorage.getItem('mi_carton_data');
+            miMatriz = save ? JSON.parse(save) : generarCarton();
+            localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
+            dibujar(); escucharBolas();
+        }
+
+        function generarCarton() {
+            let m = Array.from({length: 4}, () => Array(8).fill(null));
+            for(let f=0; f<4; f++) {
+                let nms = Array.from({length:20}, (_,i)=> i + (f*20)+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
+                let cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
+                cols.forEach((c,i) => m[f][c] = nms[i]);
+            }
+            return m;
+        }
+
+        function dibujar() {
+            const g = document.getElementById('bingo-grid'); g.innerHTML = "";
+            miMatriz.forEach((fila, fi) => {
+                fila.forEach((num, ci) => {
+                    const d = document.createElement('div');
+                    d.className = num ? 'cell' : 'cell empty';
+                    d.id = `c-${fi}-${ci}`; d.innerText = num || "";
+                    if(num) {
+                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add('marked-error');
+                        d.onclick = () => marcar(d, fi, ci, num);
                     }
+                    g.appendChild(d);
                 });
-            });
-
-            // Escuchar reseteo de partida
-            db.ref('bingo/estado').on('value', snap => {
-                if(snap.val() === "ESPERANDO_INICIO") {
-                    bolasEnJuego.clear();
-                    document.getElementById('bola-viva').innerText = "--";
-                    document.getElementById('h-1').innerText = "--";
-                    document.getElementById('h-2').innerText = "--";
-                    // Limpiar marcas visuales
-                    for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
-                }
             });
         }
 
-        function iniciar() {
-            let s = localStorage.getItem('mi_carton_data');
-            miMatriz = s ? JSON.parse(s) : generar();
-            localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
-            dibujar();
+        function marcar(el, fi, ci, num) {
+            if(el.classList.contains('marked-ok') || el.classList.contains('marked-error')) {
+                el.classList.remove('marked-ok', 'marked-error');
+                localStorage.removeItem(`m_${fi}_${ci}`);
+            } else {
+                el.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
+                localStorage.setItem(`m_${fi}_${ci}`, "1");
+                if(navigator.vibrate) navigator.vibrate(40);
+            }
+            verificarPremios();
+        }
 
+        function escucharBolas() {
             db.ref('bingo/ultimaBola').on('value', snap => {
                 const n = snap.val();
                 if(n && n !== 0) {
@@ -162,100 +137,37 @@
                     document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
                     document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
                     document.getElementById('bola-viva').innerText = n;
-                    actualizarColoresMarcado();
-                    verificar();
+                    document.querySelectorAll('.marked-error').forEach(c => {
+                        if(bolasEnJuego.has(parseInt(c.innerText))) { c.classList.remove('marked-error'); c.classList.add('marked-ok'); }
+                    });
+                    verificarPremios();
                 }
             });
             db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
         }
 
-        function generar() {
-            let m = Array.from({length: 4}, () => Array(8).fill(null));
-            for(let f=0; f<4; f++) {
-                let nms = Array.from({length:20}, (_,i)=> i + (f*20)+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
-                let v = false, cols;
-                while(!v) {
-                    cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
-                    let ft = Array(8).fill(null); cols.forEach((c,i) => ft[c] = 1);
-                    let hm = 0, hc = 0; ft.forEach(x => { if(x===null) hc++; else hc=0; if(hc>hm) hm=hc; });
-                    if(hm <= 2) v = true;
-                }
-                cols.forEach((c,i) => m[f][c] = nms[i]);
-            }
-            return m;
-        }
-
-        function dibujar() {
-            const g = document.getElementById('bingo-grid');
-            g.innerHTML = "";
-            miMatriz.forEach((f, fi) => {
-                f.forEach((n, ci) => {
-                    const d = document.createElement('div');
-                    d.className = n ? 'cell' : 'cell empty';
-                    d.id = `cell-${fi}-${ci}`;
-                    d.innerText = n || "";
-                    if(n) {
-                        if(localStorage.getItem(`m_${fi}_${ci}`)) {
-                            d.classList.add(bolasEnJuego.has(n) ? 'marked-ok' : 'marked-error');
-                        }
-                        d.onclick = () => {
-                            if(d.classList.contains('marked-ok') || d.classList.contains('marked-error')) {
-                                d.classList.remove('marked-ok', 'marked-error');
-                                localStorage.removeItem(`m_${fi}_${ci}`);
-                            } else {
-                                d.classList.add(bolasEnJuego.has(n) ? 'marked-ok' : 'marked-error');
-                                localStorage.setItem(`m_${fi}_${ci}`, "1");
-                                if(navigator.vibrate) navigator.vibrate(40);
-                            }
-                            verificar();
-                        };
-                    }
-                    g.appendChild(d);
-                });
-            });
-        }
-
-        function actualizarColoresMarcado() {
-            miMatriz.forEach((f, fi) => {
-                f.forEach((n, ci) => {
-                    if(n && localStorage.getItem(`m_${fi}_${ci}`)) {
-                        const d = document.getElementById(`cell-${fi}-${ci}`);
-                        if(bolasEnJuego.has(n)) {
-                            d.classList.remove('marked-error');
-                            d.classList.add('marked-ok');
-                        }
-                    }
-                });
-            });
-        }
-
-        function verificar() {
-            const cellsVerdes = document.querySelectorAll('.cell.marked-ok');
-            const totalNumeros = document.querySelectorAll('.cell:not(.empty)').length;
-            
-            if(cellsVerdes.length === totalNumeros && totalNumeros > 0) { 
-                db.ref('bingo/estado').set("PAUSA_BINGO"); 
-                return; 
-            }
-
-            if(!yaHuboLinea) {
+        function verificarPremios() {
+            let celdasVerdes = document.querySelectorAll('.marked-ok').length;
+            let totalNumeros = document.querySelectorAll('.cell:not(.empty)').length;
+            if(celdasVerdes === totalNumeros && totalNumeros > 0) {
+                if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 500, 100, 2000]);
+                db.ref('bingo/estado').set("PAUSA_BINGO");
+            } 
+            else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
-                    let okEnFila = 0, totalFila = 0;
-                    const fC = document.querySelectorAll(`.grid-bingo > div:nth-child(n+${f*8+1}):nth-child(-n+${(f+1)*8})`);
-                    fC.forEach(c => { 
-                        if(c.innerText !== "") { 
-                            totalFila++; 
-                            if(c.classList.contains('marked-ok')) okEnFila++; 
-                        } 
-                    });
-                    if(okEnFila === totalFila && totalFila > 0) { 
-                        db.ref('bingo/estado').set("PAUSA_LINEA"); 
-                        break; 
+                    let ok = 0, total = 0;
+                    for(let c=0; c<8; c++) {
+                        let val = miMatriz[f][c];
+                        if(val) { total++; if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++; }
+                    }
+                    if(ok === total && total > 0) {
+                        if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300, 100, 1000]);
+                        db.ref('bingo/estado').set("PAUSA_LINEA");
+                        break;
                     }
                 }
             }
         }
-        window.onload = checkAcceso;
     </script>
 </body>
 </html>
