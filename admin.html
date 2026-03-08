@@ -35,7 +35,7 @@
 
     <aside>
         <h3 style="margin-top:0">MASTER BINGO</h3>
-        <div id="aviso-linea" class="alerta">⚠️ ¡LÍNEA RECLAMADA!</div>
+        <div id="aviso-linea" class="alerta">⚠️ ¡LÍNEA CANTADA!</div>
         <div id="aviso-bingo" class="alerta">🏆 ¡BINGO RECLAMADO! 🏆</div>
         
         <div class="bola-principal" id="bola-actual">--</div>
@@ -50,11 +50,11 @@
 
         <h4 style="margin-bottom:5px">ACCESOS PENDIENTES</h4>
         <div class="waiting-list" id="lista-admision"></div>
-        <button class="btn-reset" onclick="resetPartida()">REINICIAR TODO</button>
+        <button class="btn-reset" onclick="nuevaPartida()">NUEVA PARTIDA (RESET)</button>
     </aside>
 
     <main>
-        <h3 style="margin-top:0">SEGUIMIENTO 1-80</h3>
+        <h3 style="margin-top:0">TABLA 1-80</h3>
         <div class="grid-master" id="tabla-80"></div>
     </main>
 
@@ -89,8 +89,10 @@
                     if(data[uid].estado === "pendiente") {
                         let div = document.createElement('div');
                         div.className = 'user-request';
-                        div.innerHTML = `<span>${data[uid].nombre}</span>
-                            <button style="background:#2ecc71;color:white;border:none;padding:8px;border-radius:5px;cursor:pointer;font-weight:bold;" onclick="permitir('${uid}')">ADMITIR</button>`;
+                        div.innerHTML = `
+                            <span style="font-weight:bold; font-size:1.1rem">${data[uid].nombre}</span>
+                            <button style="background:#2ecc71;color:white;border:none;padding:8px 12px;border-radius:5px;cursor:pointer;font-weight:bold;" onclick="permitir('${uid}')">ADMITIR</button>
+                        `;
                         lista.appendChild(div);
                     }
                 });
@@ -139,10 +141,23 @@
             toggleJuego();
         }
 
-        function resetPartida() {
-            if(confirm("¿Borrar todo y empezar noche nueva?")) {
-                db.ref('bingo').set({ ultimaBola: 0, estado: "JUGANDO", lineaCantada: false });
-                db.ref('bingo/solicitudes').remove();
+        function nuevaPartida() {
+            if(confirm("¿Iniciar nueva partida? Se reseteará el bombo y todos vuelven a pedir permiso.")) {
+                db.ref('bingo/ultimaBola').set(0);
+                db.ref('bingo/estado').set("ESPERANDO_INICIO");
+                db.ref('bingo/lineaCantada').set(false);
+                
+                // Reseteamos a todos a pendiente
+                db.ref('bingo/solicitudes').once('value', snap => {
+                    const data = snap.val();
+                    if(data) {
+                        let updates = {};
+                        Object.keys(data).forEach(uid => {
+                            updates[`bingo/solicitudes/${uid}/estado`] = "pendiente";
+                        });
+                        db.ref().update(updates);
+                    }
+                });
                 location.reload();
             }
         }
