@@ -5,68 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MASTER - Bingo Aldea Bella</title>
     <style>
-        :root { --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; --error: #e74c3c; --bingo: #f1c40f; }
+        :root { 
+            --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; 
+            --error: #e74c3c; --bingo: #f1c40f; --blue: #3498db; --text: #ffffff;
+        }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: var(--bg); 
+            color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; 
+        }
         
-        aside { width: 350px; background: var(--panel); padding: 15px; display: flex; flex-direction: column; border-right: 2px solid #485460; flex-shrink: 0; }
-        .bola-principal { width: 110px; height: 110px; background: white; color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; margin: 10px auto; border: 6px solid var(--accent); box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
+        aside { 
+            width: 320px; background: var(--panel); padding: 20px; display: flex; 
+            flex-direction: column; border-right: 2px solid #485460; align-items: center; flex-shrink: 0; 
+        }
         
-        .waiting-list { flex-grow: 1; background: #1e272e; border-radius: 8px; padding: 10px; overflow-y: auto; margin-top: 10px; border: 1px solid #485460; }
-        .user-request { display: flex; justify-content: space-between; align-items: center; background: #3d4451; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid var(--accent); }
-        
-        main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        .grid-master { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; background: #2f3542; padding: 15px; border-radius: 10px; }
-        .num-slot { background: #485460; color: #a4b0be; padding: 15px 0; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.1rem; border: 1px solid #57606f; }
-        .num-slot.out { background: var(--accent); color: white; transform: scale(1.05); border-color: #fff; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
+        .bola-principal { 
+            width: 140px; height: 140px; background: white; color: var(--bg); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            font-size: 4.5rem; font-weight: 900; margin: 20px 0; border: 8px solid var(--accent); 
+            box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); position: relative;
+        }
 
-        button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        #count-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); border-radius: 50%; display: none;
+            align-items: center; justify-content: center; font-size: 5rem;
+            color: var(--bingo); z-index: 10; animation: pulse 0.5s infinite alternate;
+        }
+        
+        button { 
+            width: 100%; padding: 18px; margin-bottom: 12px; border: none; 
+            border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; 
+            transition: 0.2s;
+        }
+
         .btn-play { background: var(--accent); color: white; }
         .btn-stop { background: var(--error); color: white; }
-        .btn-reset { background: #ffa502; color: white; margin-top: 10px; }
+        .btn-access { background: var(--blue); color: white; position: relative; }
+        .badge { 
+            position: absolute; top: -8px; right: -8px; background: var(--error); 
+            color: white; padding: 6px 12px; border-radius: 50%; display: none; border: 2px solid white; 
+        }
+        .btn-reset { background: #ffa502; color: white; margin-top: auto; }
+
+        main { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; }
+        .grid-master { 
+            display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; 
+            background: #2f3542; padding: 20px; border-radius: 20px; flex-grow: 1; 
+        }
+        .num-slot { 
+            background: #485460; color: #a4b0be; display: flex; align-items: center; 
+            justify-content: center; border-radius: 10px; font-weight: bold; font-size: 1.6rem; 
+        }
+        .num-slot.out { background: var(--accent); color: white; transform: scale(1.08); box-shadow: 0 0 15px rgba(46, 204, 113, 0.6); }
+
+        #modal-acceso { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; 
+        }
+        .modal-content { 
+            background: #2f3542; width: 95%; max-width: 650px; max-height: 85vh; 
+            border-radius: 25px; padding: 30px; border: 3px solid var(--blue); 
+        }
+        .user-list { overflow-y: auto; margin-top: 25px; }
+        .user-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #1e272e; padding: 15px 20px; margin-bottom: 12px; border-radius: 15px; 
+            font-size: 1.4rem; border-left: 6px solid var(--blue);
+        }
+        .btn-ok { background: var(--accent); color: white; padding: 10px; border-radius: 8px; width: auto; margin:0;}
+        .btn-kick { background: var(--error); color: white; padding: 10px; border-radius: 8px; width: auto; margin:0; margin-left: 10px; }
+
+        .alerta { padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 1.6rem; display: none; }
+        #aviso-linea { background: var(--error); color: white; border: 3px solid white; }
+        #aviso-bingo { background: var(--bingo); color: #1e272e; border: 4px solid white; }
         
-        .alerta { padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; display: none; animation: flash 1s infinite alternate; }
-        #aviso-linea { background: var(--error); color: white; }
-        #aviso-bingo { background: var(--bingo); color: #1e272e; font-size: 1.5rem; border: 4px solid white; }
-        @keyframes flash { from { opacity: 1; } to { opacity: 0.6; } }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
     </style>
 </head>
 <body>
 
-    <aside>
-        <h3 style="margin-top:0">MASTER BINGO</h3>
-        <div id="aviso-linea" class="alerta">⚠️ ¡LÍNEA CANTADA!</div>
-        <div id="aviso-bingo" class="alerta">🏆 ¡BINGO RECLAMADO! 🏆</div>
-        
-        <div class="bola-principal" id="bola-actual">--</div>
-        
-        <div id="panel-controles">
-            <button id="btn-start" class="btn-play" onclick="toggleJuego()">INICIAR BINGO (3s)</button>
-            <div id="zona-validacion" style="display:none;">
-                <button style="background:#2ecc71; color:white;" onclick="resolverPremio(true)">✅ VALIDAR PREMIO</button>
-                <button style="background:#e67e22; color:white;" onclick="resolverPremio(false)">❌ FALSO / SEGUIR</button>
+    <div id="modal-acceso">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #485460; padding-bottom: 20px;">
+                <h2 style="margin:0; color:var(--blue)">CONTROL DE ENTRADA</h2>
+                <button style="width:auto; padding:10px 25px; background:#485460; margin:0;" onclick="toggleAcceso()">CERRAR</button>
             </div>
+            <div id="lista-espera" class="user-list"></div>
+        </div>
+    </div>
+
+    <aside>
+        <h2 style="margin:0; color:var(--accent)">ALDEA MASTER</h2>
+        <div id="aviso-linea" class="alerta">⚠️ LÍNEA CANTADA</div>
+        <div id="aviso-bingo" class="alerta">🏆 BINGO RECLAMADO 🏆</div>
+
+        <div class="bola-principal">
+            <div id="count-overlay">10</div>
+            <span id="bola-actual">--</span>
         </div>
 
-        <h4 style="margin-bottom:5px">ACCESOS PENDIENTES</h4>
-        <div class="waiting-list" id="lista-admision"></div>
-        <button class="btn-reset" onclick="nuevaPartida()">NUEVA PARTIDA (RESET)</button>
+        <button id="btn-start" class="btn-play" onclick="comenzarPartida()">INICIAR BINGO</button>
+        
+        <div id="zona-validacion" style="display:none; width:100%;">
+            <button style="background:var(--accent); color:white;" onclick="resolverPremio(true)">✅ VALIDAR PREMIO</button>
+            <button style="background:#e67e22; color:white;" onclick="resolverPremio(false)">❌ FALSO / SEGUIR</button>
+        </div>
+
+        <button class="btn-access" onclick="toggleAcceso()">
+            👤 JUGADORES
+            <span id="badge-count" class="badge">0</span>
+        </button>
+
+        <button class="btn-reset" onclick="nuevaPartida()">NUEVA PARTIDA</button>
     </aside>
 
-    <main>
-        <h3 style="margin-top:0">TABLA 1-80</h3>
-        <div class="grid-master" id="tabla-80"></div>
-    </main>
+    <main><div class="grid-master" id="tabla-80"></div></main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
-            databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "bingoaldeabella"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -80,37 +141,61 @@
             document.getElementById('tabla-80').appendChild(d);
         }
 
+        function comenzarPartida() {
+            if (jugando) { toggleJuego(); return; }
+            let segundos = 10;
+            const overlay = document.getElementById('count-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('btn-start').disabled = true;
+
+            let countdown = setInterval(() => {
+                overlay.innerText = segundos;
+                db.ref('bingo/estado').set("CUENTA_" + segundos);
+                if (segundos === 0) {
+                    clearInterval(countdown);
+                    overlay.style.display = 'none';
+                    document.getElementById('btn-start').disabled = false;
+                    db.ref('bingo/estado').set("JUGANDO");
+                    toggleJuego();
+                }
+                segundos--;
+            }, 1000);
+        }
+
         db.ref('bingo/solicitudes').on('value', snap => {
-            const lista = document.getElementById('lista-admision');
-            lista.innerHTML = "";
+            const list = document.getElementById('lista-espera');
+            const badge = document.getElementById('badge-count');
+            list.innerHTML = ""; let count = 0;
             const data = snap.val();
             if(data) {
                 Object.keys(data).forEach(uid => {
                     if(data[uid].estado === "pendiente") {
-                        let div = document.createElement('div');
-                        div.className = 'user-request';
-                        div.innerHTML = `
-                            <span style="font-weight:bold; font-size:1.1rem">${data[uid].nombre}</span>
-                            <button style="background:#2ecc71;color:white;border:none;padding:8px 12px;border-radius:5px;cursor:pointer;font-weight:bold;" onclick="permitir('${uid}')">ADMITIR</button>
-                        `;
-                        lista.appendChild(div);
+                        count++;
+                        let row = document.createElement('div');
+                        row.className = 'user-row';
+                        row.innerHTML = `<span>${data[uid].nombre}</span><div><button class="btn-ok" onclick="admitir('${uid}')">OK</button><button class="btn-kick" onclick="expulsar('${uid}')">X</button></div>`;
+                        list.appendChild(row);
                     }
                 });
             }
+            badge.innerText = count; badge.style.display = count > 0 ? "block" : "none";
         });
+
+        function toggleAcceso() { const m = document.getElementById('modal-acceso'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+        function admitir(uid) { db.ref('bingo/solicitudes/' + uid).update({ estado: "autorizado" }); }
+        function expulsar(uid) { if(confirm("¿Expulsar?")) db.ref('bingo/solicitudes/' + uid).remove(); }
 
         db.ref('bingo/estado').on('value', snap => {
             const est = snap.val();
-            if(est === "PAUSA_LINEA") { mostrarAviso('aviso-linea'); }
-            else if(est === "PAUSA_BINGO") { mostrarAviso('aviso-bingo'); }
+            if(est === "PAUSA_LINEA") mostrarAviso('aviso-linea');
+            else if(est === "PAUSA_BINGO") mostrarAviso('aviso-bingo');
         });
-
-        function permitir(uid) { db.ref('bingo/solicitudes/' + uid).update({ estado: "autorizado" }); }
 
         function toggleJuego() {
             jugando = !jugando;
-            document.getElementById('btn-start').innerText = jugando ? "PAUSAR" : "CONTINUAR";
-            document.getElementById('btn-start').className = jugando ? "btn-stop" : "btn-play";
+            const btn = document.getElementById('btn-start');
+            btn.innerText = jugando ? "PAUSAR" : "CONTINUAR";
+            btn.className = jugando ? "btn-stop" : "btn-play";
             if(jugando) cicloBola(); else clearTimeout(timerBingo);
         }
 
@@ -131,9 +216,7 @@
         }
 
         function resolverPremio(esValido) {
-            if(esValido && document.getElementById('aviso-linea').style.display === 'block') {
-                db.ref('bingo/lineaCantada').set(true);
-            }
+            if(esValido && document.getElementById('aviso-linea').style.display === 'block') db.ref('bingo/lineaCantada').set(true);
             db.ref('bingo/estado').set("JUGANDO");
             document.querySelectorAll('.alerta').forEach(a => a.style.display = 'none');
             document.getElementById('zona-validacion').style.display = 'none';
@@ -142,23 +225,18 @@
         }
 
         function nuevaPartida() {
-            if(confirm("¿Iniciar nueva partida? Se reseteará el bombo y todos vuelven a pedir permiso.")) {
+            if(confirm("¿Resetear?")) {
                 db.ref('bingo/ultimaBola').set(0);
                 db.ref('bingo/estado').set("ESPERANDO_INICIO");
                 db.ref('bingo/lineaCantada').set(false);
-                
-                // Reseteamos a todos a pendiente
                 db.ref('bingo/solicitudes').once('value', snap => {
-                    const data = snap.val();
-                    if(data) {
-                        let updates = {};
-                        Object.keys(data).forEach(uid => {
-                            updates[`bingo/solicitudes/${uid}/estado`] = "pendiente";
-                        });
-                        db.ref().update(updates);
-                    }
+                    const d = snap.val();
+                    if(d) {
+                        let up = {};
+                        Object.keys(d).forEach(u => up[`bingo/solicitudes/${u}/estado`] = "pendiente");
+                        db.ref().update(up).then(() => location.reload());
+                    } else location.reload();
                 });
-                location.reload();
             }
         }
     </script>
