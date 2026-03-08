@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BINGO ALDEA BELLA</title>
     
     <meta name="mobile-web-app-capable" content="yes">
@@ -22,7 +22,7 @@
             height: 100vh; 
             width: 100vw;
             display: flex;
-            flex-direction: row; /* Bola a la izquierda, cartón a la derecha */
+            flex-direction: row; /* Por defecto Horizontal (Bola Izquierda) */
             overflow: hidden; 
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -30,10 +30,23 @@
             touch-action: manipulation;
         }
 
-        /* BARRA LATERAL IZQUIERDA (PARA LA BOLA) */
+        /* AJUSTE AUTOMÁTICO SI EL MÓVIL ESTÁ VERTICAL */
+        @media screen and (orientation: portrait) {
+            body { flex-direction: column; }
+            aside { 
+                width: 100% !important; 
+                height: 80px !important; 
+                flex-direction: row !important; 
+                margin-right: 0 !important;
+                margin-bottom: 5px !important;
+                padding: 0 15px !important;
+            }
+            .current-ball { width: 55px !important; height: 55px !important; font-size: 1.8rem !important; }
+        }
+
+        /* BARRA DE LA BOLA */
         aside {
-            width: 15vw; /* Ancho proporcional al girar el móvil */
-            min-width: 80px;
+            width: 120px;
             display: flex;
             flex-direction: column;
             justify-content: space-around;
@@ -47,23 +60,22 @@
         }
 
         .side-label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             font-weight: bold;
             color: #2ecc71;
             text-transform: uppercase;
-            margin-bottom: 5px;
         }
 
         .current-ball {
             background: #ffffff;
             color: #2f3542;
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 900;
             box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 0 0 15px rgba(46, 204, 113, 0.4);
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -73,29 +85,20 @@
             background: #c0392b;
             color: white;
             border: none;
-            width: 70px;
+            width: 75px;
             height: 50px;
             border-radius: 10px;
             font-size: 0.7rem;
             font-weight: bold;
-            cursor: pointer;
             box-shadow: 0 4px 0 #922b21;
-        }
-        .btn-new:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #922b21;
         }
 
         /* CONTENEDOR DEL CARTÓN */
-        main { 
-            flex-grow: 1; 
-            height: 100%; 
-            display: flex; 
-        }
+        main { flex-grow: 1; height: 100%; display: flex; }
 
         .ticket-container { 
             background: #d2dae2; 
-            padding: 5px; 
+            padding: 4px; 
             border-radius: 8px; 
             width: 100%;
             height: 100%; 
@@ -106,9 +109,9 @@
             display: grid; 
             grid-template-columns: repeat(8, 1fr); 
             grid-template-rows: repeat(4, 1fr); 
-            gap: 4px; 
+            gap: 3px; 
             background: #808e9b; 
-            padding: 5px; 
+            padding: 4px; 
             border: 2px solid #485460;
             border-radius: 4px;
             width: 100%;
@@ -121,10 +124,9 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: clamp(1.2rem, 10vh, 2.5rem); /* Tamaño dinámico según altura pantalla */
+            font-size: clamp(1.2rem, 9vh, 2.8rem); 
             font-weight: bold; 
             border-radius: 4px;
-            cursor: pointer;
         }
 
         .cell.empty { background: #a4b0be; }
@@ -138,7 +140,7 @@
 <body>
 
     <aside>
-        <div style="text-align: center;">
+        <div style="text-align: center; display: flex; flex-direction: inherit; align-items: center; gap: 5px;">
             <div class="side-label">BOLA</div>
             <div id="ball-display" class="current-ball">--</div>
         </div>
@@ -168,7 +170,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Escuchar la última bola en tiempo real
+        // Escuchar bola en tiempo real
         database.ref('bingo/ultimaBola').on('value', (snapshot) => {
             const numero = snapshot.val();
             if (numero !== null && numero !== 0) {
@@ -180,11 +182,10 @@
             }
         });
 
-        // Lógica del cartón (80 números, 4x8)
+        // Generar cartón funcional
         function generarCarton80() {
             const grid = document.getElementById('bingo-grid');
             grid.innerHTML = ''; 
-            
             let matrizFinal = Array.from({ length: 4 }, () => Array(8).fill(null));
             
             for (let c = 0; c < 8; c++) {
@@ -194,13 +195,10 @@
                 for (let n = inicio; n <= fin; n++) posibles.push(n);
                 posibles.sort(() => Math.random() - 0.5);
                 
-                // Ponemos 2 números por columna para asegurar 16 números (Bingo 80)
                 let seleccionados = posibles.slice(0, 2).sort((a, b) => a - b);
                 let filas = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, 2).sort();
                 
-                filas.forEach((fIdx, i) => {
-                    matrizFinal[fIdx][c] = seleccionados[i];
-                });
+                filas.forEach((fIdx, i) => { matrizFinal[fIdx][c] = seleccionados[i]; });
             }
 
             for (let f = 0; f < 4; f++) {
@@ -219,7 +217,7 @@
                             timer = setTimeout(() => {
                                 div.classList.toggle('marked');
                                 if (navigator.vibrate) navigator.vibrate(40);
-                            }, 200); // Tus 200ms de seguridad
+                            }, 200); // 200ms de seguridad
                         };
                         const cancelarAccion = () => clearTimeout(timer);
 
