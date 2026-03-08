@@ -7,147 +7,191 @@
     <style>
         * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 5px;
+            font-family: 'Segoe UI', sans-serif; background: #1e272e; color: white; margin: 0; padding: 5px;
             height: 100vh; width: 100vw; display: flex; flex-direction: row; overflow: hidden; 
             -webkit-user-select: none; user-select: none; touch-action: manipulation;
         }
+        
+        /* Lateral */
         aside {
             width: 22vw; min-width: 110px; display: flex; flex-direction: column;
             justify-content: flex-start; align-items: center; background: #2f3542;
-            border-radius: 12px; margin-right: 10px; padding: 15px 5px; flex-shrink: 0; border: 2px solid #485460;
+            border-radius: 12px; margin-right: 10px; padding: 10px 5px; flex-shrink: 0; border: 2px solid #485460;
         }
-        .current-ball {
-            background: #ffffff; color: #1e272e; width: 90px; height: 90px; border-radius: 50%;
+        .bola-cantada {
+            background: #fff; color: #1e272e; width: 85px; height: 85px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; font-size: 3rem;
             font-weight: 900; border: 4px solid #2ecc71; margin-bottom: 10px;
         }
-        .prev-ball {
-            background: #485460; color: #d2dae2; width: 40px; height: 40px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-top: 5px;
-        }
+        .historial-bola { background: #485460; color: #d2dae2; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-top: 5px; border: 1px solid #57606f; }
+
+        /* Cartón */
         main { flex-grow: 1; height: 100%; display: flex; }
-        .grid { 
+        .grid-bingo { 
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 4px; background: #808e9b; padding: 5px; border-radius: 4px; width: 100%; height: 100%;
+            gap: 4px; background: #808e9b; padding: 5px; border-radius: 6px; width: 100%; height: 100%;
         }
         .cell { 
             background: white; color: #2f3542; display: flex; align-items: center; justify-content: center; 
-            font-size: 2rem; font-weight: bold; border-radius: 4px;
+            font-size: clamp(1.2rem, 10vh, 2.5rem); font-weight: bold; border-radius: 4px; cursor: pointer;
         }
-        .cell.empty { background: #a4b0be; }
-        .cell.marked { background: #2ecc71 !important; color: white; }
-        #msg-status { position: fixed; top: 10px; right: 10px; background: #f1c40f; color: black; padding: 5px 10px; border-radius: 5px; font-weight: bold; display: none; }
+        .cell.empty { background: #a4b0be; cursor: default; }
+        .cell.marked { background: #2ecc71 !important; color: white; box-shadow: inset 0 0 0 4px #27ae60; }
+        
+        /* Sala de Espera */
+        #bloqueo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e272e; z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="msg-status">ESPERANDO VERIFICACIÓN...</div>
+    <div id="bloqueo">
+        <div id="bloqueo-status">Cargando sistema...</div>
+    </div>
 
     <aside>
-        <div style="font-size: 0.8rem; color: #2ecc71;">BOLA</div>
-        <div id="ball-display" class="current-ball">--</div>
-        <div id="prev-1" class="prev-ball">--</div>
-        <div id="prev-2" class="prev-ball">--</div>
+        <div style="font-size: 0.7rem; color: #2ecc71; font-weight: bold;">BOLA</div>
+        <div id="bola-viva" class="bola-cantada">--</div>
+        <div id="h-1" class="historial-bola">--</div>
+        <div id="h-2" class="historial-bola">--</div>
     </aside>
 
     <main>
-        <div class="grid" id="bingo-grid"></div>
+        <div class="grid-bingo" id="bingo-grid"></div>
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
             databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "bingoaldeabella",
-            appId: "1:911712071246:web:52e2f5edb30e0372471d1f"
+            projectId: "bingoaldeabella"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let bolasCantadas = new Set();
-        let lineaPremiada = false;
+        let bolasEnJuego = new Set();
+        let yaHuboLinea = false;
         let miMatriz = [];
+        let miId = localStorage.getItem('aldea_uid') || 'u' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('aldea_uid', miId);
 
-        // 1. Escuchar bolas y estado de la línea
-        db.ref('bingo/ultimaBola').on('value', (snap) => {
-            const num = snap.val();
-            if (num) {
-                bolasCantadas.add(num);
-                document.getElementById('prev-1').innerText = document.getElementById('ball-display').innerText;
-                document.getElementById('ball-display').innerText = num;
-            }
-        });
-
-        db.ref('bingo/lineaCantada').on('value', (snap) => {
-            lineaPremiada = snap.val();
-        });
-
-        // 2. Generar Cartón Persistente
-        function generarCarton() {
-            let guardado = localStorage.getItem('carton_aldea');
-            miMatriz = guardado ? JSON.parse(guardado) : crearMatriz();
-            localStorage.setItem('carton_aldea', JSON.stringify(miMatriz));
-            dibujar();
+        // --- SISTEMA DE ADMISIÓN ---
+        function checkAcceso() {
+            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                const status = snap.val();
+                if(!status) {
+                    let nom = prompt("Dinos tu nombre para el Master:");
+                    if(nom) db.ref('bingo/solicitudes/' + miId).set({ nombre: nom, estado: "pendiente" });
+                } else if(status.estado === "pendiente") {
+                    document.getElementById('bloqueo-status').innerHTML = "<h2>HOLA " + status.nombre + "</h2><p>Espera a que el Master te autorice en el bar.</p>";
+                } else if(status.estado === "autorizado") {
+                    document.getElementById('bloqueo').style.display = 'none';
+                    inicializarJuego();
+                }
+            });
         }
 
-        function crearMatriz() {
-            let m = Array.from({length:4}, () => Array(8).fill(null));
+        function inicializarJuego() {
+            // Cargar o generar cartón
+            let save = localStorage.getItem('mi_carton_data');
+            miMatriz = save ? JSON.parse(save) : generarMatrizBingo();
+            localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
+            
+            dibujarGrid();
+            escucharBolas();
+        }
+
+        function generarMatrizBingo() {
+            let matriz = Array.from({length: 4}, () => Array(8).fill(null));
             for(let f=0; f<4; f++) {
-                let nums = Array.from({length:20}, (_,i) => i+(f*20)+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
-                let cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
-                cols.forEach((c,i) => m[f][c] = nums[i]);
+                let r_ini = (f * 20) + 1;
+                let nums = Array.from({length:20}, (_,i)=> i + r_ini).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
+                
+                let valida = false;
+                let cols;
+                while(!valida) {
+                    cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
+                    let fTemp = Array(8).fill(null);
+                    cols.forEach((c,i) => fTemp[c] = nums[i]);
+                    let hMax = 0, hCont = 0;
+                    fTemp.forEach(v => { if(v===null) hCont++; else hCont=0; if(hCont>hMax) hMax=hCont; });
+                    if(hMax <= 2) valida = true;
+                }
+                cols.forEach((c,i) => matriz[f][c] = nums[i]);
             }
-            return m;
+            return matriz;
         }
 
-        function dibujar() {
+        function dibujarGrid() {
             const grid = document.getElementById('bingo-grid');
+            grid.innerHTML = "";
             miMatriz.forEach((fila, fIdx) => {
                 fila.forEach((num, cIdx) => {
-                    const div = document.createElement('div');
-                    div.className = num ? 'cell' : 'cell empty';
-                    div.innerText = num || '';
+                    const d = document.createElement('div');
+                    d.className = num ? 'cell' : 'cell empty';
+                    d.innerText = num || "";
                     if(num) {
-                        let t;
-                        div.onclick = () => {
-                            div.classList.toggle('marked');
-                            comprobarLinea(fIdx);
+                        if(localStorage.getItem(`m_${fIdx}_${cIdx}`)) d.classList.add('marked');
+                        
+                        let timer;
+                        const touchStart = (e) => {
+                            e.preventDefault();
+                            timer = setTimeout(() => {
+                                d.classList.toggle('marked');
+                                if(d.classList.contains('marked')) localStorage.setItem(`m_${fIdx}_${cIdx}`, "1");
+                                else localStorage.removeItem(`m_${fIdx}_${cIdx}`);
+                                if(navigator.vibrate) navigator.vibrate(40);
+                                verificarLinea(fIdx);
+                            }, 200);
                         };
+                        d.addEventListener('touchstart', touchStart);
+                        d.addEventListener('touchend', () => clearTimeout(timer));
+                        d.addEventListener('mousedown', touchStart);
+                        d.addEventListener('mouseup', () => clearTimeout(timer));
                     }
-                    grid.appendChild(div);
+                    grid.appendChild(d);
                 });
             });
         }
 
-        function comprobarLinea(filaIdx) {
-            if (lineaPremiada) return; // Ya hubo premio de línea
-
-            const celdasFila = document.querySelectorAll(`.grid > div:nth-child(n+${filaIdx*8+1}):nth-child(-n+${(filaIdx+1)*8})`);
-            let marcadosYValidos = 0;
-            let totalNumerosEnFila = 0;
-
-            celdasFila.forEach(celda => {
-                if(celda.innerText !== "") {
-                    totalNumerosEnFila++;
-                    const num = parseInt(celda.innerText);
-                    if(celda.classList.contains('marked') && bolasCantadas.has(num)) {
-                        marcadosYValidos++;
-                    }
+        function escucharBolas() {
+            db.ref('bingo/ultimaBola').on('value', snap => {
+                const n = snap.val();
+                if(n && n !== 0) {
+                    bolasEnJuego.add(n);
+                    document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
+                    document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
+                    document.getElementById('bola-viva').innerText = n;
                 }
             });
+            db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
+        }
 
-            // Si ha marcado todos los de la fila Y todos han salido
-            if(marcadosYValidos === totalNumerosEnFila && totalNumerosEnFila > 0) {
-                document.getElementById('msg-status').style.display = 'block';
-                db.ref('bingo/estado').set('PAUSA_LINEA');
-                db.ref('bingo/aviso').set("¡LÍNEA RECLAMADA!");
+        function verificarLinea(fIdx) {
+            if(yaHuboLinea) return; // No hace nada si ya se premió la línea
+
+            const celdas = document.querySelectorAll('.cell');
+            const inicio = fIdx * 8;
+            let aciertos = 0, totalEnFila = 0;
+
+            for(let i = inicio; i < inicio + 8; i++) {
+                if(celdas[i].innerText !== "") {
+                    totalEnFila++;
+                    let val = parseInt(celdas[i].innerText);
+                    if(celdas[i].classList.contains('marked') && bolasEnJuego.has(val)) {
+                        aciertos++;
+                    }
+                }
+            }
+
+            if(aciertos === totalEnFila && totalEnFila > 0) {
+                db.ref('bingo/estado').set("PAUSA_LINEA");
             }
         }
 
-        window.onload = generarCarton;
+        window.onload = checkAcceso;
     </script>
 </body>
 </html>
