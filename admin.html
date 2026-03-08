@@ -5,23 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MASTER - Bingo Aldea Bella</title>
     <style>
-        :root { --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; --error: #e74c3c; --text: #d2dae2; }
+        :root { --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; --error: #e74c3c; --bingo: #f1c40f; }
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Panel Lateral */
         aside { width: 350px; background: var(--panel); padding: 15px; display: flex; flex-direction: column; border-right: 2px solid #485460; flex-shrink: 0; }
         .bola-principal { width: 110px; height: 110px; background: white; color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; margin: 10px auto; border: 6px solid var(--accent); box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
         
-        /* Gestión de Jugadores */
         .waiting-list { flex-grow: 1; background: #1e272e; border-radius: 8px; padding: 10px; overflow-y: auto; margin-top: 10px; border: 1px solid #485460; }
         .user-request { display: flex; justify-content: space-between; align-items: center; background: #3d4451; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid var(--accent); }
-        .btn-mini { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
         
-        /* Panel Principal */
         main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
         .grid-master { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; background: #2f3542; padding: 15px; border-radius: 10px; }
-        .num-slot { background: #485460; color: #a4b0be; padding: 15px 0; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.1rem; transition: all 0.3s; border: 1px solid #57606f; }
+        .num-slot { background: #485460; color: #a4b0be; padding: 15px 0; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.1rem; border: 1px solid #57606f; }
         .num-slot.out { background: var(--accent); color: white; transform: scale(1.05); border-color: #fff; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
 
-        /* Botones de Control
+        button { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .btn-play { background: var(--accent); color: white; }
+        .btn-stop { background: var(--error); color: white; }
+        .btn-reset { background: #ffa502; color: white; margin-top: 10px; }
+        
+        .alerta { padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; display: none; animation: flash 1s infinite alternate; }
+        #aviso-linea { background: var(--error); color: white; }
+        #aviso-bingo { background: var(--bingo); color: #1e272e; font-size: 1.5rem; border: 4px solid white; }
+        @keyframes flash { from { opacity: 1; } to { opacity: 0.6; } }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <h3 style="margin-top:0">MASTER BINGO</h3>
+        <div id="aviso-linea" class="alerta">⚠️ ¡LÍNEA RECLAMADA!</div>
+        <div id="aviso-bingo" class="alerta">🏆 ¡BINGO RECLAMADO! 🏆</div>
+        
+        <div class="bola-principal" id="bola-actual">--</div>
+        
+        <div id="panel-controles">
+            <button id="btn-start" class="btn-play" onclick="toggleJuego()">INICIAR BINGO (3s)</button>
+            <div id="zona-validacion" style="display:none;">
+                <button style="background:#2ecc71; color:white;" onclick="resolverPremio(true)">✅ VALIDAR PREMIO</button>
+                <button style="background:#e67e22; color:white;" onclick="resolverPremio(false)">❌ FALSO / SEGUIR</button>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom:5px">ACCESOS PENDIENTES</h4>
+        <div class="waiting-list" id="lista-admision"></div>
+        <button class="btn-reset" onclick="resetPartida()">REINICIAR TODO</button>
+    </aside>
+
+    <main>
+        <h3 style="margin-top:0">SEGUIMIENTO 1-80</h3>
+        <div class="grid-master" id="tabla-80"></div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
+            databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "bingoaldeabella"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let bombo = Array.from({length: 80}, (_, i) => i + 1);
+        let jugando = false;
+        let timerBingo;
+
+        for(let i=1; i<=80; i++) {
+            let d = document.createElement('div');
+            d.className = 'num-slot'; d.id = 'n-' + i; d.innerText = i;
+            document.getElementById('tabla-80').appendChild(d);
+        }
+
+        db.ref('bingo/solicitudes').on('value', snap => {
+            const lista = document.getElementById('lista-admision');
+            lista.innerHTML = "";
+            const data = snap.val();
+            if(data) {
+                Object.keys(data).forEach(uid => {
+                    if(data[uid].estado === "pendiente") {
+                        let div = document.createElement('div');
+                        div.className = 'user-request';
+                        div.innerHTML = `<span>${data[uid].nombre}</span>
+                            <button style="background:#2ecc71;color:white;border:none;padding:8px;border-radius:5px;cursor:pointer;font-weight:bold;" onclick="permitir('${uid}')">ADMITIR</button>`;
+                        lista.appendChild(div);
+                    }
+                });
+            }
+        });
+
+        db.ref('bingo/estado').on('value', snap => {
+            const est = snap.val();
+            if(est === "PAUSA_LINEA") { mostrarAviso('aviso-linea'); }
+            else if(est === "PAUSA_BINGO") { mostrarAviso('aviso-bingo'); }
+        });
+
+        function permitir(uid) { db.ref('bingo/solicitudes/' + uid).update({ estado: "autorizado" }); }
+
+        function toggleJuego() {
+            jugando = !jugando;
+            document.getElementById('btn-start').innerText = jugando ? "PAUSAR" : "CONTINUAR";
+            document.getElementById('btn-start').className = jugando ? "btn-stop" : "btn-play";
+            if(jugando) cicloBola(); else clearTimeout(timerBingo);
+        }
+
+        function mostrarAviso(id) {
+            jugando = false; clearTimeout(timerBingo);
+            document.getElementById(id).style.display = 'block';
+            document.getElementById('zona-validacion').style.display = 'block';
+            document.getElementById('btn-start').style.display = 'none';
+        }
+
+        function cicloBola() {
+            if(!jugando || bombo.length === 0) return;
+            const num = bombo.splice(Math.floor(Math.random() * bombo.length), 1)[0];
+            document.getElementById('bola-actual').innerText = num;
+            document.getElementById('n-' + num).classList.add('out');
+            db.ref('bingo/ultimaBola').set(num);
+            timerBingo = setTimeout(cicloBola, 3000);
+        }
+
+        function resolverPremio(esValido) {
+            if(esValido && document.getElementById('aviso-linea').style.display === 'block') {
+                db.ref('bingo/lineaCantada').set(true);
+            }
+            db.ref('bingo/estado').set("JUGANDO");
+            document.querySelectorAll('.alerta').forEach(a => a.style.display = 'none');
+            document.getElementById('zona-validacion').style.display = 'none';
+            document.getElementById('btn-start').style.display = 'block';
+            toggleJuego();
+        }
+
+        function resetPartida() {
+            if(confirm("¿Borrar todo y empezar noche nueva?")) {
+                db.ref('bingo').set({ ultimaBola: 0, estado: "JUGANDO", lineaCantada: false });
+                db.ref('bingo/solicitudes').remove();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
