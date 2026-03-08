@@ -2,155 +2,56 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
     <title>BINGO ALDEA BELLA</title>
-    
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
-
     <style>
         * { box-sizing: border-box; }
-        
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #1e272e; 
-            color: white; 
-            margin: 0; 
-            padding: 5px;
-            height: 100vh; 
-            width: 100vw;
-            display: flex;
-            flex-direction: row; /* Por defecto Horizontal (Bola Izquierda) */
-            overflow: hidden; 
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: manipulation;
+            font-family: 'Segoe UI', sans-serif; background-color: #1e272e; color: white; margin: 0; padding: 5px;
+            height: 100vh; width: 100vw; display: flex; flex-direction: row; overflow: hidden; 
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
         }
-
-        /* AJUSTE AUTOMÁTICO SI EL MÓVIL ESTÁ VERTICAL */
-        @media screen and (orientation: portrait) {
-            body { flex-direction: column; }
-            aside { 
-                width: 100% !important; 
-                height: 80px !important; 
-                flex-direction: row !important; 
-                margin-right: 0 !important;
-                margin-bottom: 5px !important;
-                padding: 0 15px !important;
-            }
-            .current-ball { width: 55px !important; height: 55px !important; font-size: 1.8rem !important; }
-        }
-
-        /* BARRA DE LA BOLA */
         aside {
-            width: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            align-items: center;
-            background: #2f3542;
-            border-radius: 12px;
-            margin-right: 10px;
-            padding: 10px 0;
-            flex-shrink: 0;
-            border: 2px solid #485460;
+            width: 22vw; min-width: 110px; display: flex; flex-direction: column;
+            justify-content: flex-start; align-items: center; background: #2f3542;
+            border-radius: 12px; margin-right: 10px; padding: 15px 5px; flex-shrink: 0; border: 2px solid #485460;
         }
-
-        .side-label {
-            font-size: 0.7rem;
-            font-weight: bold;
-            color: #2ecc71;
-            text-transform: uppercase;
-        }
-
         .current-ball {
-            background: #ffffff;
-            color: #2f3542;
-            width: 75px;
-            height: 75px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.8rem;
-            font-weight: 900;
-            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 0 0 15px rgba(46, 204, 113, 0.4);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #ffffff; color: #1e272e; width: 90px; height: 90px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 3rem;
+            font-weight: 900; border: 4px solid #2ecc71; margin-bottom: 10px;
         }
-
-        .btn-new {
-            background: #c0392b;
-            color: white;
-            border: none;
-            width: 75px;
-            height: 50px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #922b21;
+        .prev-ball {
+            background: #485460; color: #d2dae2; width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-top: 5px;
         }
-
-        /* CONTENEDOR DEL CARTÓN */
         main { flex-grow: 1; height: 100%; display: flex; }
-
-        .ticket-container { 
-            background: #d2dae2; 
-            padding: 4px; 
-            border-radius: 8px; 
-            width: 100%;
-            height: 100%; 
-            display: flex;
-        }
-
         .grid { 
-            display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            grid-template-rows: repeat(4, 1fr); 
-            gap: 3px; 
-            background: #808e9b; 
-            padding: 4px; 
-            border: 2px solid #485460;
-            border-radius: 4px;
-            width: 100%;
-            height: 100%;
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
+            gap: 4px; background: #808e9b; padding: 5px; border-radius: 4px; width: 100%; height: 100%;
         }
-
         .cell { 
-            background: white; 
-            color: #2f3542; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: clamp(1.2rem, 9vh, 2.8rem); 
-            font-weight: bold; 
-            border-radius: 4px;
+            background: white; color: #2f3542; display: flex; align-items: center; justify-content: center; 
+            font-size: 2rem; font-weight: bold; border-radius: 4px;
         }
-
         .cell.empty { background: #a4b0be; }
-        .cell.marked { 
-            background: #2ecc71 !important; 
-            color: white; 
-            box-shadow: inset 0 0 0 4px #27ae60; 
-        }
+        .cell.marked { background: #2ecc71 !important; color: white; }
+        #msg-status { position: fixed; top: 10px; right: 10px; background: #f1c40f; color: black; padding: 5px 10px; border-radius: 5px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
 
+    <div id="msg-status">ESPERANDO VERIFICACIÓN...</div>
+
     <aside>
-        <div style="text-align: center; display: flex; flex-direction: inherit; align-items: center; gap: 5px;">
-            <div class="side-label">BOLA</div>
-            <div id="ball-display" class="current-ball">--</div>
-        </div>
-        <button class="btn-new" onclick="window.location.reload()">NUEVO<br>CARTÓN</button>
+        <div style="font-size: 0.8rem; color: #2ecc71;">BOLA</div>
+        <div id="ball-display" class="current-ball">--</div>
+        <div id="prev-1" class="prev-ball">--</div>
+        <div id="prev-2" class="prev-ball">--</div>
     </aside>
 
     <main>
-        <div class="ticket-container">
-            <div id="bingo-grid" class="grid"></div>
-        </div>
+        <div class="grid" id="bingo-grid"></div>
     </main>
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -159,78 +60,94 @@
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
-            authDomain: "bingoaldeabella.firebaseapp.com",
             databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "bingoaldeabella",
-            storageBucket: "bingoaldeabella.firebasestorage.app",
-            messagingSenderId: "911712071246",
             appId: "1:911712071246:web:52e2f5edb30e0372471d1f"
         };
-
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const db = firebase.database();
 
-        // Escuchar bola en tiempo real
-        database.ref('bingo/ultimaBola').on('value', (snapshot) => {
-            const numero = snapshot.val();
-            if (numero !== null && numero !== 0) {
-                const display = document.getElementById('ball-display');
-                display.innerText = numero;
-                display.style.transform = "scale(1.3)";
-                setTimeout(() => display.style.transform = "scale(1)", 200);
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        let bolasCantadas = new Set();
+        let lineaPremiada = false;
+        let miMatriz = [];
+
+        // 1. Escuchar bolas y estado de la línea
+        db.ref('bingo/ultimaBola').on('value', (snap) => {
+            const num = snap.val();
+            if (num) {
+                bolasCantadas.add(num);
+                document.getElementById('prev-1').innerText = document.getElementById('ball-display').innerText;
+                document.getElementById('ball-display').innerText = num;
             }
         });
 
-        // Generar cartón funcional
-        function generarCarton80() {
-            const grid = document.getElementById('bingo-grid');
-            grid.innerHTML = ''; 
-            let matrizFinal = Array.from({ length: 4 }, () => Array(8).fill(null));
-            
-            for (let c = 0; c < 8; c++) {
-                let inicio = (c * 10) + 1;
-                let fin = (c * 10) + 10;
-                let posibles = [];
-                for (let n = inicio; n <= fin; n++) posibles.push(n);
-                posibles.sort(() => Math.random() - 0.5);
-                
-                let seleccionados = posibles.slice(0, 2).sort((a, b) => a - b);
-                let filas = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, 2).sort();
-                
-                filas.forEach((fIdx, i) => { matrizFinal[fIdx][c] = seleccionados[i]; });
+        db.ref('bingo/lineaCantada').on('value', (snap) => {
+            lineaPremiada = snap.val();
+        });
+
+        // 2. Generar Cartón Persistente
+        function generarCarton() {
+            let guardado = localStorage.getItem('carton_aldea');
+            miMatriz = guardado ? JSON.parse(guardado) : crearMatriz();
+            localStorage.setItem('carton_aldea', JSON.stringify(miMatriz));
+            dibujar();
+        }
+
+        function crearMatriz() {
+            let m = Array.from({length:4}, () => Array(8).fill(null));
+            for(let f=0; f<4; f++) {
+                let nums = Array.from({length:20}, (_,i) => i+(f*20)+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
+                let cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
+                cols.forEach((c,i) => m[f][c] = nums[i]);
             }
+            return m;
+        }
 
-            for (let f = 0; f < 4; f++) {
-                for (let c = 0; c < 8; c++) {
-                    const valor = matrizFinal[f][c];
+        function dibujar() {
+            const grid = document.getElementById('bingo-grid');
+            miMatriz.forEach((fila, fIdx) => {
+                fila.forEach((num, cIdx) => {
                     const div = document.createElement('div');
-                    if (valor === null) {
-                        div.className = 'cell empty';
-                    } else {
-                        div.className = 'cell';
-                        div.innerText = valor;
-                        
-                        let timer;
-                        const iniciarAccion = (e) => {
-                            e.preventDefault();
-                            timer = setTimeout(() => {
-                                div.classList.toggle('marked');
-                                if (navigator.vibrate) navigator.vibrate(40);
-                            }, 200); // 200ms de seguridad
+                    div.className = num ? 'cell' : 'cell empty';
+                    div.innerText = num || '';
+                    if(num) {
+                        let t;
+                        div.onclick = () => {
+                            div.classList.toggle('marked');
+                            comprobarLinea(fIdx);
                         };
-                        const cancelarAccion = () => clearTimeout(timer);
-
-                        div.addEventListener('touchstart', iniciarAccion);
-                        div.addEventListener('touchend', cancelarAccion);
-                        div.addEventListener('mousedown', iniciarAccion);
-                        div.addEventListener('mouseup', cancelarAccion);
                     }
                     grid.appendChild(div);
+                });
+            });
+        }
+
+        function comprobarLinea(filaIdx) {
+            if (lineaPremiada) return; // Ya hubo premio de línea
+
+            const celdasFila = document.querySelectorAll(`.grid > div:nth-child(n+${filaIdx*8+1}):nth-child(-n+${(filaIdx+1)*8})`);
+            let marcadosYValidos = 0;
+            let totalNumerosEnFila = 0;
+
+            celdasFila.forEach(celda => {
+                if(celda.innerText !== "") {
+                    totalNumerosEnFila++;
+                    const num = parseInt(celda.innerText);
+                    if(celda.classList.contains('marked') && bolasCantadas.has(num)) {
+                        marcadosYValidos++;
+                    }
                 }
+            });
+
+            // Si ha marcado todos los de la fila Y todos han salido
+            if(marcadosYValidos === totalNumerosEnFila && totalNumerosEnFila > 0) {
+                document.getElementById('msg-status').style.display = 'block';
+                db.ref('bingo/estado').set('PAUSA_LINEA');
+                db.ref('bingo/aviso').set("¡LÍNEA RECLAMADA!");
             }
         }
-        window.onload = generarCarton80;
+
+        window.onload = generarCarton;
     </script>
 </body>
 </html>
