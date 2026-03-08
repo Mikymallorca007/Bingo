@@ -2,33 +2,60 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BINGO ALDEA BELLA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JUGADOR - Bingo Aldea Bella</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f0c29">
+
     <style>
         :root { --bg: #0f0c29; --accent: #00d2ff; --win: #2ecc71; --fail: #e74c3c; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(to right, #0f0c29, #302b63, #24243e); color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; }
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: linear-gradient(to right, #0f0c29, #302b63, #24243e); 
+            color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; 
+        }
         
-        aside { width: 22vw; background: rgba(255, 255, 255, 0.1); border-radius: 15px; margin-right: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px); }
-        .bola-cantada { background: white; color: #1e272e; width: 75px; height: 75px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; }
-        .historial { background: rgba(0,0,0,0.3); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; }
+        aside { 
+            width: 20vw; max-width: 100px; background: rgba(255, 255, 255, 0.1); 
+            border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; 
+            flex-direction: column; align-items: center; backdrop-filter: blur(5px); flex-shrink: 0;
+        }
+        .bola-cantada { 
+            background: white; color: #1e272e; width: 65px; height: 65px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; 
+            font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; 
+        }
+        .historial { 
+            background: rgba(0,0,0,0.3); width: 38px; height: 38px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold;
+        }
 
-        main { flex-grow: 1; height: 100%; }
-        .grid-bingo { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; width: 100%; height: 100%; }
-        .cell { background: white; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 0 #bdc3c7; }
+        main { flex-grow: 1; height: 100%; overflow: hidden; }
+        .grid-bingo { 
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
+            gap: 5px; width: 100%; height: 100%; 
+        }
+        .cell { 
+            background: white; color: #2c3e50; display: flex; align-items: center; 
+            justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
+            box-shadow: 0 4px 0 #bdc3c7; 
+        }
         .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
-        #bloqueo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e3c72; z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .status-box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); }
+        #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
+        #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
 
     <div id="bloqueo">
         <div class="status-box">
-            <h1 id="bloqueo-status" style="font-size: 2.5rem; margin:0;">CONECTANDO...</h1>
+            <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0;">CONECTANDO AL BINGO...</h1>
+            <button id="btn-instalar-jugador" onclick="instalarPWA()">INSTALAR APP</button>
         </div>
     </div>
 
@@ -43,6 +70,28 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
+        // PWA E INSTALACIÓN
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+        let promptInstalacion;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); promptInstalacion = e;
+            document.getElementById('btn-instalar-jugador').style.display = 'block';
+        });
+        async function instalarPWA() {
+            if (promptInstalacion) {
+                promptInstalacion.prompt();
+                const { outcome } = await promptInstalacion.userChoice;
+                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
+            }
+        }
+
+        // KEEP AWAKE (PANTALLA SIEMPRE ENCENDIDA)
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+        };
+        window.addEventListener('focus', requestWakeLock);
+
         const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -57,13 +106,14 @@
         db.ref('bingo/solicitudes/' + miId).on('value', snap => {
             const s = snap.val();
             if(!s) {
-                if(!miNombre) { miNombre = prompt("Dime tu nombre:").toUpperCase(); localStorage.setItem('aldea_nombre', miNombre); }
+                if(!miNombre) { miNombre = prompt("Dime tu nombre para el cartón:").toUpperCase(); localStorage.setItem('aldea_nombre', miNombre); }
                 db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente" });
             } else if(s.estado === "pendiente") {
                 document.getElementById('bloqueo').style.display = 'flex';
-                document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br>Espera al Master.";
+                document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br>Espera a que el Master te autorice.";
             } else {
                 document.getElementById('bloqueo').style.display = 'none';
+                requestWakeLock();
                 if(miMatriz.length === 0) cargarJuego();
             }
         });
@@ -74,14 +124,18 @@
             if(est && est.startsWith("CUENTA_")) {
                 const seg = est.split("_")[1];
                 document.getElementById('bloqueo').style.display = 'flex';
-                status.innerHTML = `<span style="font-size:5rem; color:yellow;">${seg}</span>`;
+                status.innerHTML = `<span style="font-size:6rem; color:yellow;">${seg}</span>`;
                 if(navigator.vibrate) navigator.vibrate(50);
             } 
             else if(est === "JUGANDO") {
                 if(document.getElementById('bloqueo').style.display === 'flex') { if(navigator.vibrate) navigator.vibrate(1000); }
                 document.getElementById('bloqueo').style.display = 'none';
             }
-            else if(est === "ESPERANDO_INICIO") location.reload();
+            else if(est === "ESPERANDO_INICIO") {
+                localStorage.removeItem('mi_carton_data');
+                for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
+                location.reload();
+            }
         });
 
         function cargarJuego() {
@@ -109,7 +163,7 @@
                     d.className = num ? 'cell' : 'cell empty';
                     d.id = `c-${fi}-${ci}`; d.innerText = num || "";
                     if(num) {
-                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add('marked-error');
+                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
                         d.onclick = () => marcar(d, fi, ci, num);
                     }
                     g.appendChild(d);
@@ -137,8 +191,9 @@
                     document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
                     document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
                     document.getElementById('bola-viva').innerText = n;
+                    // Auto-corregir marcas erróneas si la bola acaba de salir
                     document.querySelectorAll('.marked-error').forEach(c => {
-                        if(bolasEnJuego.has(parseInt(c.innerText))) { c.classList.remove('marked-error'); c.classList.add('marked-ok'); }
+                        if(bolasEnJuego.has(parseInt(c.innerText))) { c.className = 'cell marked-ok'; }
                     });
                     verificarPremios();
                 }
@@ -148,20 +203,22 @@
 
         function verificarPremios() {
             let celdasVerdes = document.querySelectorAll('.marked-ok').length;
-            let totalNumeros = document.querySelectorAll('.cell:not(.empty)').length;
-            if(celdasVerdes === totalNumeros && totalNumeros > 0) {
-                if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 500, 100, 2000]);
+            let totalNumeros = 20; // 5 por fila x 4 filas
+            
+            // BINGO
+            if(celdasVerdes === totalNumeros) {
+                if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
+            // LÍNEA
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
-                    let ok = 0, total = 0;
+                    let ok = 0;
                     for(let c=0; c<8; c++) {
-                        let val = miMatriz[f][c];
-                        if(val) { total++; if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++; }
+                        if(miMatriz[f][c] && document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
                     }
-                    if(ok === total && total > 0) {
-                        if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300, 100, 1000]);
+                    if(ok === 5) {
+                        if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
                     }
