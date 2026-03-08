@@ -1,0 +1,16 @@
+{
+  "name": "BINGO ALDEA BELLA",
+  "short_name": "Bingo",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1e272e",
+  "theme_color": "#2ecc71",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5406/5406796.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
