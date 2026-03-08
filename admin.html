@@ -2,72 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mando - Bingo Aldea Bella</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <title>Master - Aldea Bella</title>
     <style>
-        body { background: #1a1a2e; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .bola-display { width: 140px; height: 140px; background: white; color: #1a1a2e; border-radius: 50%; 
-                        display: flex; align-items: center; justify-content: center; font-size: 70px; 
-                        margin: 30px auto; font-weight: bold; border: 8px solid #2ecc71; }
-        button { width: 100%; padding: 25px; font-size: 22px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-start { background: #2ecc71; color: white; }
-        .btn-pause { background: #e94560; color: white; }
-        #historial { margin-top: 30px; color: #95a5a6; font-size: 16px; text-align: left; }
+        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; }
+        .bola { font-size: 5rem; background: white; color: black; width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 20px auto; border: 10px solid #f1c40f; }
+        .alerta { background: #e74c3c; padding: 20px; font-size: 2rem; display: none; }
+        button { padding: 20px; font-size: 1.2rem; cursor: pointer; margin: 10px; }
     </style>
 </head>
 <body>
-    <h1>Bingo Aldea Bella</h1>
-    <div class="bola-display" id="bola">--</div>
-    <button id="btnControl" class="btn-start" onclick="toggleBingo()">INICIAR BINGO (3s)</button>
-    <div id="historial">Bolas: </div>
+    <div id="alerta-linea" class="alerta">⚠️ ¡LÍNEA SOLICITADA! JUEGO PAUSADO</div>
+    <h1>Master Bingo</h1>
+    <div class="bola" id="bola">--</div>
+    <button id="btn" onclick="toggle()">INICIAR JUEGO (3s)</button>
+    <button id="btn-validar" style="display:none; background:#2ecc71;" onclick="validarLinea()">VALIDAR LÍNEA (No habrá más)</button>
+    <button id="btn-falsa" style="display:none; background:#e67e22;" onclick="continuar()">LÍNEA FALSA (Continuar)</button>
 
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
-            authDomain: "bingoaldeabella.firebaseapp.com",
             databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "bingoaldeabella",
-            storageBucket: "bingoaldeabella.firebasestorage.app",
-            messagingSenderId: "911712071246",
-            appId: "1:911712071246:web:52e2f5edb30e0372471d1f"
+            projectId: "bingoaldeabella"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let bombo = Array.from({length: 80}, (_, i) => i + 1);
-        let jugando = false;
-        let timer;
+        let bombo = Array.from({length:80}, (_,i)=>i+1);
+        let timer, jugando = false;
 
-        function toggleBingo() {
-            const btn = document.getElementById('btnControl');
-            if (!jugando) {
-                jugando = true;
-                btn.innerText = "PAUSAR (BINGO!)";
-                btn.className = "btn-pause";
-                sacarBola();
-            } else {
-                jugando = false;
-                btn.innerText = "CONTINUAR JUEGO";
-                btn.className = "btn-start";
-                clearTimeout(timer);
+        // Escuchar si un jugador reclama línea
+        db.ref('bingo/estado').on('value', (snap) => {
+            if(snap.val() === 'PAUSA_LINEA') {
+                pausar();
+                document.getElementById('alerta-linea').style.display = 'block';
+                document.getElementById('btn-validar').style.display = 'inline-block';
+                document.getElementById('btn-falsa').style.display = 'inline-block';
             }
+        });
+
+        function toggle() {
+            if(!jugando) { 
+                jugando = true;
+                document.getElementById('btn').innerText = "PAUSAR";
+                sacar();
+            } else { pausar(); }
         }
 
-        function sacarBola() {
-            if (jugando && bombo.length > 0) {
-                const index = Math.floor(Math.random() * bombo.length);
-                const bola = bombo.splice(index, 1)[0];
-                
-                document.getElementById('bola').innerText = bola;
-                document.getElementById('historial').innerText += bola + " - ";
-                
-                // MANDA EL DATO A FIREBASE
-                db.ref('bingo/ultimaBola').set(bola);
+        function pausar() {
+            jugando = false;
+            clearTimeout(timer);
+            document.getElementById('btn').innerText = "REANUDAR";
+        }
 
-                timer = setTimeout(sacarBola, 3000);
-            }
+        function sacar() {
+            if(!jugando || bombo.length === 0) return;
+            const num = bombo.splice(Math.floor(Math.random()*bombo.length), 1)[0];
+            document.getElementById('bola').innerText = num;
+            db.ref('bingo/ultimaBola').set(num);
+            timer = setTimeout(sacar, 3000);
+        }
+
+        function validarLinea() {
+            db.ref('bingo/lineaCantada').set(true); // Bloquea más líneas
+            continuar();
+        }
+
+        function continuar() {
+            db.ref('bingo/estado').set('JUGANDO');
+            document.getElementById('alerta-linea').style.display = 'none';
+            document.getElementById('btn-validar').style.display = 'none';
+            document.getElementById('btn-falsa').style.display = 'none';
+            toggle();
         }
     </script>
 </body>
