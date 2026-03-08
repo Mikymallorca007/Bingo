@@ -2,101 +2,258 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Master</title>
-
-    <!-- Agregar Firebase CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-
-    <script>
-      // Configuración de Firebase (reemplaza con tus datos)
-      const firebaseConfig = {
-        apiKey: "AIzaSyBYxGZ0h0pYmHD3y0Je65n3W3Cks5nq1zoqej9g",
-        authDomain: "bingoonline-bd06b.firebaseapp.com",
-        projectId: "bingoonline-bd06b",
-        storageBucket: "bingoonline-bd06b.appspot.com",
-        messagingSenderId: "270863273268",
-        appId: "1:270863273268:web:a6b2ca08792864359bba5b"
-      };
-
-      // Inicializar Firebase
-      const app = firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore(app);
-
-      // Generar un cartón aleatorio
-      function generarCartonAleatorio() {
-        const carton = [];
-        for (let i = 0; i < 8; i++) {
-          let columna = [];
-          let rangoMin = i * 10 + 1;
-          let rangoMax = (i + 1) * 10;
-
-          while (columna.length < 3) {
-            let numero = Math.floor(Math.random() * (rangoMax - rangoMin + 1)) + rangoMin;
-            if (!columna.includes(numero)) {
-              columna.push(numero);
-            }
-          }
-          carton.push(columna);
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BINGO ALDEA BELLA</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #1e272e; 
+            color: white; 
+            margin: 0; 
+            padding: 5px;
+            height: 100vh; 
+            display: flex;
+            flex-direction: row; 
+            overflow: hidden; 
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
         }
-        return carton;
-      }
 
-      // Guardar el cartón en Firebase
-      function guardarCartonEnFirebase(carton) {
-        db.collection("cartones").add({
-          carton: carton,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then((docRef) => {
-          console.log("Cartón guardado con ID: ", docRef.id);
-        })
-        .catch((error) => {
-          console.error("Error al guardar el cartón: ", error);
-        });
-      }
+        /* BARRA LATERAL IZQUIERDA */
+        aside {
+            width: 85px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            background: #2f3542;
+            border-radius: 12px;
+            margin-right: 8px;
+            padding: 10px 0;
+            flex-shrink: 0;
+            border: 2px solid #485460;
+        }
 
-      // Mostrar el cartón del master
-      function mostrarCartonMaster(carton) {
-        const divCarton = document.getElementById('cartonMaster');
-        divCarton.innerHTML = '';  // Limpiar el div antes de mostrar el cartón
+        .side-label {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #2ecc71;
+            text-transform: uppercase;
+        }
 
-        carton.forEach(fila => {
-          const filaDiv = document.createElement('div');
-          fila.forEach(num => {
-            const casilla = document.createElement('div');
-            casilla.textContent = num;
-            casilla.classList.add('casilla');
-            filaDiv.appendChild(casilla);
-          });
-          divCarton.appendChild(filaDiv);
-        });
-      }
+        .current-ball {
+            background: #ffffff;
+            color: #2f3542;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 0 0 15px rgba(46, 204, 113, 0.3);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
 
-      // Escuchar cambios en Firestore para obtener el cartón en tiempo real
-      db.collection("cartones").orderBy("timestamp", "desc").limit(1).onSnapshot((snapshot) => {
-        snapshot.forEach((doc) => {
-          const carton = doc.data().carton;
-          mostrarCartonMaster(carton);
-        });
-      });
+        .btn-new {
+            background: #27ae60;
+            color: white;
+            border: none;
+            width: 65px;
+            height: 65px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1e8449;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .btn-new:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1e8449;
+        }
 
-      // Función para manejar el botón de generar cartón
-      function generarCarton() {
-        const cartonGenerado = generarCartonAleatorio();
-        guardarCartonEnFirebase(cartonGenerado);
-      }
+        main { flex-grow: 1; height: 100%; display: flex; }
 
-    </script>
+        .ticket-container { 
+            background: #d2dae2; 
+            padding: 5px; 
+            border-radius: 8px; 
+            width: 100%;
+            height: 100%; 
+            display: flex;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(8, 1fr); 
+            grid-template-rows: repeat(4, 1fr); 
+            gap: 4px; 
+            background: #808e9b; 
+            padding: 5px; 
+            border: 2px solid #485460;
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell { 
+            background: white; 
+            color: #2f3542; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: clamp(1.4rem, 8vh, 2.5rem); 
+            font-weight: bold; 
+            border-radius: 4px;
+        }
+
+        .cell.empty { background: #a4b0be; }
+        .cell.marked { 
+            background: #2ecc71 !important; 
+            color: white; 
+            box-shadow: inset 0 0 0 4px #27ae60; 
+        }
+    </style>
 </head>
 <body>
-    <h1>Bingo Master</h1>
 
-    <div id="cartonMaster">
-        <!-- El cartón generado por el master se mostrará aquí -->
-    </div>
+    <aside>
+        <div style="text-align: center;">
+            <div class="side-label">BOLA</div>
+            <div class="current-ball" id="ball-display">--</div>
+        </div>
+        <button class="btn-new" onclick="window.location.reload()">NUEVA<br>PARTIDA</button>
+    </aside>
 
-    <button onclick="generarCarton()">Generar Cartón</button>
+    <main>
+        <div class="ticket-container">
+            <div id="bingo-grid" class="grid"></div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+    <script>
+        // CONFIGURACIÓN REAL DE TU PROYECTO
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
+            authDomain: "bingoaldeabella.firebaseapp.com",
+            databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "bingoaldeabella",
+            storageBucket: "bingoaldeabella.firebasestorage.app",
+            messagingSenderId: "911712071246",
+            appId: "1:911712071246:web:52e2f5edb30e0372471d1f"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Escuchar cambios en la bola desde Android Studio
+        database.ref('bingo/ultimaBola').on('value', (snapshot) => {
+            const numero = snapshot.val();
+            if (numero !== null) {
+                const display = document.getElementById('ball-display');
+                display.innerText = numero;
+                
+                // Efecto visual de rebote
+                display.style.transform = "scale(1.4)";
+                setTimeout(() => display.style.transform = "scale(1)", 200);
+                
+                // Vibración para el cliente
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
+        });
+
+        // --- Lógica del Cartón ---
+        function validarLinea(linea) {
+            let seguidos = 0;
+            for (let x of linea) {
+                if (x === 0) seguidos++; else seguidos = 0;
+                if (seguidos > 2) return false;
+            }
+            return true;
+        }
+
+        function generarCarton80() {
+            const grid = document.getElementById('bingo-grid');
+            grid.innerHTML = ''; 
+            let matrizEstructura = [];
+            let esValidaTotal = false;
+
+            while (!esValidaTotal) {
+                matrizEstructura = [];
+                for (let f = 0; f < 4; f++) {
+                    let fila;
+                    do {
+                        fila = [1, 1, 1, 1, 1, 0, 0, 0];
+                        fila.sort(() => Math.random() - 0.5);
+                    } while (!validarLinea(fila));
+                    matrizEstructura.push(fila);
+                }
+                esValidaTotal = true;
+                for (let c = 0; c < 8; c++) {
+                    let cerosVerticales = 0;
+                    for (let f = 0; f < 4; f++) {
+                        if (matrizEstructura[f][c] === 0) cerosVerticales++; else cerosVerticales = 0;
+                        if (cerosVerticales > 2) { esValidaTotal = false; break; }
+                    }
+                    if (!esValidaTotal) break;
+                }
+            }
+
+            let matrizFinal = Array.from({ length: 4 }, () => Array(8).fill(null));
+            for (let c = 0; c < 8; c++) {
+                let inicio = (c * 10) + 1;
+                let fin = (c * 10) + 10;
+                let posibles = [];
+                for (let n = inicio; n <= fin; n++) posibles.push(n);
+                posibles.sort(() => Math.random() - 0.5);
+                let filasConNumero = [];
+                for (let f = 0; f < 4; f++) { if (matrizEstructura[f][c] === 1) filasConNumero.push(f); }
+                let valoresElegidos = posibles.slice(0, filasConNumero.length).sort((a, b) => a - b);
+                filasConNumero.forEach((fIdx, i) => { matrizFinal[fIdx][c] = valoresElegidos[i]; });
+            }
+
+            for (let f = 0; f < 4; f++) {
+                for (let c = 0; c < 8; c++) {
+                    const valor = matrizFinal[f][c];
+                    const div = document.createElement('div');
+                    if (valor === null) {
+                        div.className = 'cell empty';
+                    } else {
+                        div.className = 'cell';
+                        div.innerText = valor;
+                        let timer;
+                        const tiempoRequerido = 200; // Tus 200ms de seguridad
+
+                        const iniciarAccion = (e) => {
+                            e.preventDefault();
+                            timer = setTimeout(() => {
+                                div.classList.toggle('marked');
+                                if (navigator.vibrate) navigator.vibrate(35);
+                            }, tiempoRequerido);
+                        };
+                        const cancelarAccion = () => { clearTimeout(timer); };
+
+                        div.addEventListener('touchstart', iniciarAccion);
+                        div.addEventListener('touchend', cancelarAccion);
+                        div.addEventListener('mousedown', iniciarAccion);
+                        div.addEventListener('mouseup', cancelarAccion);
+                        div.addEventListener('mouseleave', cancelarAccion);
+                    }
+                    grid.appendChild(div);
+                }
+            }
+        }
+        window.onload = generarCarton80;
+    </script>
 </body>
 </html>
