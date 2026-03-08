@@ -104,16 +104,47 @@
         localStorage.setItem('aldea_uid', miId);
 
         function checkAcceso() {
-            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                const s = snap.val();
-                if(!s) {
-                    let n = prompt("Tu nombre para el Bingo:");
-                    if(n) db.ref('bingo/solicitudes/' + miId).set({ nombre: n.toUpperCase(), estado: "pendiente" });
-                } else if(s.estado === "pendiente") {
-                    document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br><br>Espera a que te den permiso en la barra.";
-                } else if(s.estado === "autorizado") {
-                    document.getElementById('bloqueo').style.display = 'none';
-                    iniciar();
+            // Verificamos nombres en uso antes de nada
+            db.ref('bingo/solicitudes').once('value', snapAll => {
+                const todas = snapAll.val() || {};
+
+                db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                    const s = snap.val();
+                    
+                    if(!s) {
+                        let n = prompt("Tu nombre para el Bingo:");
+                        if(n) {
+                            n = n.toUpperCase().trim();
+                            // Verificar si el nombre ya existe en otro ID
+                            const nombresOcupados = Object.values(todas).map(u => u.nombre);
+                            if(nombresOcupados.includes(n)) {
+                                alert("Ese nombre ya está en uso. Elige otro.");
+                                location.reload();
+                            } else {
+                                db.ref('bingo/solicitudes/' + miId).set({ nombre: n, estado: "pendiente" });
+                            }
+                        }
+                    } else if(s.estado === "pendiente") {
+                        document.getElementById('bloqueo').style.display = 'flex';
+                        document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br><br>Espera a que el Master te acepte para la partida.";
+                        localStorage.removeItem('mi_carton_data'); 
+                        miMatriz = [];
+                    } else if(s.estado === "autorizado") {
+                        document.getElementById('bloqueo').style.display = 'none';
+                        if(miMatriz.length === 0) iniciar();
+                    }
+                });
+            });
+
+            // Escuchar reseteo de partida
+            db.ref('bingo/estado').on('value', snap => {
+                if(snap.val() === "ESPERANDO_INICIO") {
+                    bolasEnJuego.clear();
+                    document.getElementById('bola-viva').innerText = "--";
+                    document.getElementById('h-1').innerText = "--";
+                    document.getElementById('h-2').innerText = "--";
+                    // Limpiar marcas visuales
+                    for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
                 }
             });
         }
@@ -132,7 +163,7 @@
                     document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
                     document.getElementById('bola-viva').innerText = n;
                     actualizarColoresMarcado();
-                    verificar(); // Re-verificar al salir nueva bola por si hay auto-bingo
+                    verificar();
                 }
             });
             db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
