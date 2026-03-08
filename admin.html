@@ -2,80 +2,26 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Master - Aldea Bella</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER - Bingo Aldea Bella</title>
     <style>
-        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; }
-        .bola { font-size: 5rem; background: white; color: black; width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 20px auto; border: 10px solid #f1c40f; }
-        .alerta { background: #e74c3c; padding: 20px; font-size: 2rem; display: none; }
-        button { padding: 20px; font-size: 1.2rem; cursor: pointer; margin: 10px; }
-    </style>
-</head>
-<body>
-    <div id="alerta-linea" class="alerta">⚠️ ¡LÍNEA SOLICITADA! JUEGO PAUSADO</div>
-    <h1>Master Bingo</h1>
-    <div class="bola" id="bola">--</div>
-    <button id="btn" onclick="toggle()">INICIAR JUEGO (3s)</button>
-    <button id="btn-validar" style="display:none; background:#2ecc71;" onclick="validarLinea()">VALIDAR LÍNEA (No habrá más)</button>
-    <button id="btn-falsa" style="display:none; background:#e67e22;" onclick="continuar()">LÍNEA FALSA (Continuar)</button>
+        :root { --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; --error: #e74c3c; --text: #d2dae2; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Panel Lateral */
+        aside { width: 350px; background: var(--panel); padding: 15px; display: flex; flex-direction: column; border-right: 2px solid #485460; flex-shrink: 0; }
+        .bola-principal { width: 110px; height: 110px; background: white; color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; margin: 10px auto; border: 6px solid var(--accent); box-shadow: 0 0 20px rgba(46, 204, 113, 0.3); }
+        
+        /* Gestión de Jugadores */
+        .waiting-list { flex-grow: 1; background: #1e272e; border-radius: 8px; padding: 10px; overflow-y: auto; margin-top: 10px; border: 1px solid #485460; }
+        .user-request { display: flex; justify-content: space-between; align-items: center; background: #3d4451; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid var(--accent); }
+        .btn-mini { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
+        
+        /* Panel Principal */
+        main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        .grid-master { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; background: #2f3542; padding: 15px; border-radius: 10px; }
+        .num-slot { background: #485460; color: #a4b0be; padding: 15px 0; text-align: center; border-radius: 6px; font-weight: bold; font-size: 1.1rem; transition: all 0.3s; border: 1px solid #57606f; }
+        .num-slot.out { background: var(--accent); color: white; transform: scale(1.05); border-color: #fff; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo",
-            databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "bingoaldeabella"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        let bombo = Array.from({length:80}, (_,i)=>i+1);
-        let timer, jugando = false;
-
-        // Escuchar si un jugador reclama línea
-        db.ref('bingo/estado').on('value', (snap) => {
-            if(snap.val() === 'PAUSA_LINEA') {
-                pausar();
-                document.getElementById('alerta-linea').style.display = 'block';
-                document.getElementById('btn-validar').style.display = 'inline-block';
-                document.getElementById('btn-falsa').style.display = 'inline-block';
-            }
-        });
-
-        function toggle() {
-            if(!jugando) { 
-                jugando = true;
-                document.getElementById('btn').innerText = "PAUSAR";
-                sacar();
-            } else { pausar(); }
-        }
-
-        function pausar() {
-            jugando = false;
-            clearTimeout(timer);
-            document.getElementById('btn').innerText = "REANUDAR";
-        }
-
-        function sacar() {
-            if(!jugando || bombo.length === 0) return;
-            const num = bombo.splice(Math.floor(Math.random()*bombo.length), 1)[0];
-            document.getElementById('bola').innerText = num;
-            db.ref('bingo/ultimaBola').set(num);
-            timer = setTimeout(sacar, 3000);
-        }
-
-        function validarLinea() {
-            db.ref('bingo/lineaCantada').set(true); // Bloquea más líneas
-            continuar();
-        }
-
-        function continuar() {
-            db.ref('bingo/estado').set('JUGANDO');
-            document.getElementById('alerta-linea').style.display = 'none';
-            document.getElementById('btn-validar').style.display = 'none';
-            document.getElementById('btn-falsa').style.display = 'none';
-            toggle();
-        }
-    </script>
-</body>
-</html>
+        /* Botones de Control
