@@ -5,59 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
     <title>BINGO ALDEA BELLA</title>
     <style>
+        :root { --bg: #0f0c29; --accent: #00d2ff; --win: #2ecc71; --fail: #e74c3c; }
         * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', sans-serif; background: #1e272e; color: white; margin: 0; padding: 5px;
-            height: 100vh; width: 100vw; display: flex; flex-direction: row; overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #0f0c29, #302b63, #24243e);
+            color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw;
+            display: flex; flex-direction: row; overflow: hidden;
             -webkit-user-select: none; user-select: none; touch-action: manipulation;
         }
-        
-        /* Lateral */
+
+        /* Lateral con Bolas */
         aside {
-            width: 22vw; min-width: 110px; display: flex; flex-direction: column;
-            justify-content: flex-start; align-items: center; background: #2f3542;
-            border-radius: 12px; margin-right: 10px; padding: 10px 5px; flex-shrink: 0; border: 2px solid #485460;
+            width: 20vw; min-width: 100px; display: flex; flex-direction: column;
+            align-items: center; background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px; margin-right: 10px; padding: 10px 5px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .bola-cantada {
-            background: #fff; color: #1e272e; width: 85px; height: 85px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 3rem;
-            font-weight: 900; border: 4px solid #2ecc71; margin-bottom: 10px;
+            background: white; color: #1e272e; width: 80px; height: 80px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 2.8rem; font-weight: 900; border: 4px solid var(--win);
+            box-shadow: 0 0 20px var(--win); margin-bottom: 10px;
         }
-        .historial-bola { background: #485460; color: #d2dae2; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-top: 5px; border: 1px solid #57606f; }
+        .historial-bola {
+            background: rgba(0, 0, 0, 0.3); color: #ccc; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-top: 5px; border: 1px solid #444;
+        }
 
-        /* Cartón */
+        /* Cartón de Juego */
         main { flex-grow: 1; height: 100%; display: flex; }
         .grid-bingo { 
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 4px; background: #808e9b; padding: 5px; border-radius: 6px; width: 100%; height: 100%;
+            gap: 5px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 10px; width: 100%; height: 100%;
         }
         .cell { 
-            background: white; color: #2f3542; display: flex; align-items: center; justify-content: center; 
-            font-size: clamp(1.2rem, 10vh, 2.5rem); font-weight: bold; border-radius: 4px; cursor: pointer;
+            background: #fdfdfd; color: #2c3e50; display: flex; align-items: center; justify-content: center; 
+            font-size: 2.2rem; font-weight: 800; border-radius: 6px; transition: all 0.2s;
+            box-shadow: 0 4px 0 #bdc3c7;
         }
-        .cell.empty { background: #a4b0be; cursor: default; }
-        .cell.marked { background: #2ecc71 !important; color: white; box-shadow: inset 0 0 0 4px #27ae60; }
+        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Sala de Espera */
-        #bloqueo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e272e; z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center; }
+        /* Estados de Marcado */
+        .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
+        .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
+
+        /* Pantalla de Bloqueo / Admisión */
+        #bloqueo { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            z-index: 10000; display: flex; align-items: center; justify-content: center; text-align: center;
+        }
+        .brand-box {
+            background: rgba(255,255,255,0.1); padding: 40px; border-radius: 25px;
+            border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+            max-width: 80%;
+        }
+        .brand-title { font-size: 3rem; margin: 0; color: var(--accent); text-shadow: 0 0 10px var(--accent); font-weight: 900; }
+        .brand-subtitle { font-size: 1.2rem; color: #fff; margin-top: 10px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div id="bloqueo">
-        <div id="bloqueo-status">Cargando sistema...</div>
+        <div class="brand-box">
+            <h1 class="brand-title">BINGO</h1>
+            <h2 style="margin:0; font-size: 1.5rem; color:white;">ALDEA BELLA</h2>
+            <div id="bloqueo-status" class="brand-subtitle">Conectando con el Master...</div>
+        </div>
     </div>
 
     <aside>
-        <div style="font-size: 0.7rem; color: #2ecc71; font-weight: bold;">BOLA</div>
+        <div style="font-size: 0.7rem; color: var(--accent); font-weight: bold; letter-spacing: 2px;">SALIDA</div>
         <div id="bola-viva" class="bola-cantada">--</div>
         <div id="h-1" class="historial-bola">--</div>
         <div id="h-2" class="historial-bola">--</div>
     </aside>
 
-    <main>
-        <div class="grid-bingo" id="bingo-grid"></div>
-    </main>
+    <main><div class="grid-bingo" id="bingo-grid"></div></main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -77,86 +103,27 @@
         let miId = localStorage.getItem('aldea_uid') || 'u' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('aldea_uid', miId);
 
-        // --- SISTEMA DE ADMISIÓN ---
         function checkAcceso() {
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                const status = snap.val();
-                if(!status) {
-                    let nom = prompt("Dinos tu nombre para el Master:");
-                    if(nom) db.ref('bingo/solicitudes/' + miId).set({ nombre: nom, estado: "pendiente" });
-                } else if(status.estado === "pendiente") {
-                    document.getElementById('bloqueo-status').innerHTML = "<h2>HOLA " + status.nombre + "</h2><p>Espera a que el Master te autorice en el bar.</p>";
-                } else if(status.estado === "autorizado") {
+                const s = snap.val();
+                if(!s) {
+                    let n = prompt("Tu nombre para el Bingo:");
+                    if(n) db.ref('bingo/solicitudes/' + miId).set({ nombre: n.toUpperCase(), estado: "pendiente" });
+                } else if(s.estado === "pendiente") {
+                    document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br><br>Espera a que te den permiso en la barra.";
+                } else if(s.estado === "autorizado") {
                     document.getElementById('bloqueo').style.display = 'none';
-                    inicializarJuego();
+                    iniciar();
                 }
             });
         }
 
-        function inicializarJuego() {
-            // Cargar o generar cartón
-            let save = localStorage.getItem('mi_carton_data');
-            miMatriz = save ? JSON.parse(save) : generarMatrizBingo();
+        function iniciar() {
+            let s = localStorage.getItem('mi_carton_data');
+            miMatriz = s ? JSON.parse(s) : generar();
             localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
-            
-            dibujarGrid();
-            escucharBolas();
-        }
+            dibujar();
 
-        function generarMatrizBingo() {
-            let matriz = Array.from({length: 4}, () => Array(8).fill(null));
-            for(let f=0; f<4; f++) {
-                let r_ini = (f * 20) + 1;
-                let nums = Array.from({length:20}, (_,i)=> i + r_ini).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
-                
-                let valida = false;
-                let cols;
-                while(!valida) {
-                    cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
-                    let fTemp = Array(8).fill(null);
-                    cols.forEach((c,i) => fTemp[c] = nums[i]);
-                    let hMax = 0, hCont = 0;
-                    fTemp.forEach(v => { if(v===null) hCont++; else hCont=0; if(hCont>hMax) hMax=hCont; });
-                    if(hMax <= 2) valida = true;
-                }
-                cols.forEach((c,i) => matriz[f][c] = nums[i]);
-            }
-            return matriz;
-        }
-
-        function dibujarGrid() {
-            const grid = document.getElementById('bingo-grid');
-            grid.innerHTML = "";
-            miMatriz.forEach((fila, fIdx) => {
-                fila.forEach((num, cIdx) => {
-                    const d = document.createElement('div');
-                    d.className = num ? 'cell' : 'cell empty';
-                    d.innerText = num || "";
-                    if(num) {
-                        if(localStorage.getItem(`m_${fIdx}_${cIdx}`)) d.classList.add('marked');
-                        
-                        let timer;
-                        const touchStart = (e) => {
-                            e.preventDefault();
-                            timer = setTimeout(() => {
-                                d.classList.toggle('marked');
-                                if(d.classList.contains('marked')) localStorage.setItem(`m_${fIdx}_${cIdx}`, "1");
-                                else localStorage.removeItem(`m_${fIdx}_${cIdx}`);
-                                if(navigator.vibrate) navigator.vibrate(40);
-                                verificarLinea(fIdx);
-                            }, 200);
-                        };
-                        d.addEventListener('touchstart', touchStart);
-                        d.addEventListener('touchend', () => clearTimeout(timer));
-                        d.addEventListener('mousedown', touchStart);
-                        d.addEventListener('mouseup', () => clearTimeout(timer));
-                    }
-                    grid.appendChild(d);
-                });
-            });
-        }
-
-        function escucharBolas() {
             db.ref('bingo/ultimaBola').on('value', snap => {
                 const n = snap.val();
                 if(n && n !== 0) {
@@ -164,33 +131,99 @@
                     document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
                     document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
                     document.getElementById('bola-viva').innerText = n;
+                    actualizarColoresMarcado();
+                    verificar(); // Re-verificar al salir nueva bola por si hay auto-bingo
                 }
             });
             db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
         }
 
-        function verificarLinea(fIdx) {
-            if(yaHuboLinea) return; // No hace nada si ya se premió la línea
+        function generar() {
+            let m = Array.from({length: 4}, () => Array(8).fill(null));
+            for(let f=0; f<4; f++) {
+                let nms = Array.from({length:20}, (_,i)=> i + (f*20)+1).sort(()=>Math.random()-0.5).slice(0,5).sort((a,b)=>a-b);
+                let v = false, cols;
+                while(!v) {
+                    cols = [0,1,2,3,4,5,6,7].sort(()=>Math.random()-0.5).slice(0,5).sort();
+                    let ft = Array(8).fill(null); cols.forEach((c,i) => ft[c] = 1);
+                    let hm = 0, hc = 0; ft.forEach(x => { if(x===null) hc++; else hc=0; if(hc>hm) hm=hc; });
+                    if(hm <= 2) v = true;
+                }
+                cols.forEach((c,i) => m[f][c] = nms[i]);
+            }
+            return m;
+        }
 
-            const celdas = document.querySelectorAll('.cell');
-            const inicio = fIdx * 8;
-            let aciertos = 0, totalEnFila = 0;
+        function dibujar() {
+            const g = document.getElementById('bingo-grid');
+            g.innerHTML = "";
+            miMatriz.forEach((f, fi) => {
+                f.forEach((n, ci) => {
+                    const d = document.createElement('div');
+                    d.className = n ? 'cell' : 'cell empty';
+                    d.id = `cell-${fi}-${ci}`;
+                    d.innerText = n || "";
+                    if(n) {
+                        if(localStorage.getItem(`m_${fi}_${ci}`)) {
+                            d.classList.add(bolasEnJuego.has(n) ? 'marked-ok' : 'marked-error');
+                        }
+                        d.onclick = () => {
+                            if(d.classList.contains('marked-ok') || d.classList.contains('marked-error')) {
+                                d.classList.remove('marked-ok', 'marked-error');
+                                localStorage.removeItem(`m_${fi}_${ci}`);
+                            } else {
+                                d.classList.add(bolasEnJuego.has(n) ? 'marked-ok' : 'marked-error');
+                                localStorage.setItem(`m_${fi}_${ci}`, "1");
+                                if(navigator.vibrate) navigator.vibrate(40);
+                            }
+                            verificar();
+                        };
+                    }
+                    g.appendChild(d);
+                });
+            });
+        }
 
-            for(let i = inicio; i < inicio + 8; i++) {
-                if(celdas[i].innerText !== "") {
-                    totalEnFila++;
-                    let val = parseInt(celdas[i].innerText);
-                    if(celdas[i].classList.contains('marked') && bolasEnJuego.has(val)) {
-                        aciertos++;
+        function actualizarColoresMarcado() {
+            miMatriz.forEach((f, fi) => {
+                f.forEach((n, ci) => {
+                    if(n && localStorage.getItem(`m_${fi}_${ci}`)) {
+                        const d = document.getElementById(`cell-${fi}-${ci}`);
+                        if(bolasEnJuego.has(n)) {
+                            d.classList.remove('marked-error');
+                            d.classList.add('marked-ok');
+                        }
+                    }
+                });
+            });
+        }
+
+        function verificar() {
+            const cellsVerdes = document.querySelectorAll('.cell.marked-ok');
+            const totalNumeros = document.querySelectorAll('.cell:not(.empty)').length;
+            
+            if(cellsVerdes.length === totalNumeros && totalNumeros > 0) { 
+                db.ref('bingo/estado').set("PAUSA_BINGO"); 
+                return; 
+            }
+
+            if(!yaHuboLinea) {
+                for(let f=0; f<4; f++) {
+                    let okEnFila = 0, totalFila = 0;
+                    const fC = document.querySelectorAll(`.grid-bingo > div:nth-child(n+${f*8+1}):nth-child(-n+${(f+1)*8})`);
+                    fC.forEach(c => { 
+                        if(c.innerText !== "") { 
+                            totalFila++; 
+                            if(c.classList.contains('marked-ok')) okEnFila++; 
+                        } 
+                    });
+                    if(okEnFila === totalFila && totalFila > 0) { 
+                        db.ref('bingo/estado').set("PAUSA_LINEA"); 
+                        break; 
                     }
                 }
             }
-
-            if(aciertos === totalEnFila && totalEnFila > 0) {
-                db.ref('bingo/estado').set("PAUSA_LINEA");
-            }
         }
-
         window.onload = checkAcceso;
     </script>
 </body>
