@@ -121,6 +121,7 @@
         db.ref('bingo/estado').on('value', snap => {
             const est = snap.val();
             const status = document.getElementById('bloqueo-status');
+            
             if(est && est.startsWith("CUENTA_")) {
                 const seg = est.split("_")[1];
                 document.getElementById('bloqueo').style.display = 'flex';
@@ -132,9 +133,19 @@
                 document.getElementById('bloqueo').style.display = 'none';
             }
             else if(est === "ESPERANDO_INICIO") {
-                localStorage.removeItem('mi_carton_data');
-                for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
-                location.reload();
+                // SOLUCIÓN AL BUCLE: Solo recargar si hay un cartón viejo que limpiar
+                if(localStorage.getItem('mi_carton_data')) {
+                    localStorage.removeItem('mi_carton_data');
+                    for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
+                    location.reload();
+                } else {
+                    document.getElementById('bloqueo').style.display = 'flex';
+                    status.innerHTML = "PARTIDA FINALIZADA<br>Esperando nueva ronda...";
+                    // Limpiamos visualmente los números por si acaso
+                    document.getElementById('bola-viva').innerText = "--";
+                    document.getElementById('h-1').innerText = "--";
+                    document.getElementById('h-2').innerText = "--";
+                }
             }
         });
 
@@ -146,36 +157,18 @@
         }
 
         function generarCarton() {
-            // Creamos una matriz vacía de 4 filas x 8 columnas
             let m = Array.from({length: 4}, () => Array(8).fill(null));
-            
-            // Recorremos cada una de las 8 columnas
             for(let c = 0; c < 8; c++) {
-                // Rango de la columna (Ej: Col 0: 1-10, Col 1: 11-20...)
                 let min = (c * 10) + 1;
                 let max = (c * 10) + 10;
-                
-                // Sacamos 2 o 3 números aleatorios para esta columna para que no esté vacía
-                // (En un cartón de 4x8 con 20 números, tocan a 2.5 números por columna)
                 let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
-                
                 let opcionesColumna = [];
                 for(let n = min; n <= max; n++) opcionesColumna.push(n);
-                
-                // Mezclamos y elegimos los números de esta columna
                 let elegidos = opcionesColumna.sort(() => Math.random() - 0.5).slice(0, cantidadNumeros);
-                elegidos.sort((a, b) => a - b); // Ordenamos de menor a mayor para que se vea limpio
-        
-                // Elegimos en qué filas de esa columna los ponemos (al azar)
+                elegidos.sort((a, b) => a - b);
                 let filasDisponibles = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, cantidadNumeros).sort();
-                
-                filasDisponibles.forEach((f, index) => {
-                    m[f][c] = elegidos[index];
-                });
+                filasDisponibles.forEach((f, index) => { m[f][c] = elegidos[index]; });
             }
-        
-            // Ajuste final: Si por azar han salido más o menos de 20 números, 
-            // el sistema lo deja así para que cada cartón sea realmente único en dificultad.
             return m;
         }
 
@@ -215,7 +208,6 @@
                     document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
                     document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
                     document.getElementById('bola-viva').innerText = n;
-                    // Auto-corregir marcas erróneas si la bola acaba de salir
                     document.querySelectorAll('.marked-error').forEach(c => {
                         if(bolasEnJuego.has(parseInt(c.innerText))) { c.className = 'cell marked-ok'; }
                     });
@@ -227,21 +219,24 @@
 
         function verificarPremios() {
             let celdasVerdes = document.querySelectorAll('.marked-ok').length;
-            let totalNumeros = 20; // 5 por fila x 4 filas
+            let totalNumerosEnCarton = 0;
+            miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
             
-            // BINGO
-            if(celdasVerdes === totalNumeros) {
+            if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
-            // LÍNEA
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
                     let ok = 0;
+                    let numEnFila = 0;
                     for(let c=0; c<8; c++) {
-                        if(miMatriz[f][c] && document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
+                        if(miMatriz[f][c]) {
+                            numEnFila++;
+                            if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
+                        }
                     }
-                    if(ok === 5) {
+                    if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
@@ -252,4 +247,3 @@
     </script>
 </body>
 </html>
-
