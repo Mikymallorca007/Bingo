@@ -57,46 +57,35 @@
         const messaging = firebase.messaging();
         let audioCtx;
 
-        // FUNCIÓN PRINCIPAL DE ACTIVACIÓN
         function activarTodo() {
-            // 1. Activar Audio Context (necesario para sonidos en móviles)
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            // 2. Registrar el Service Worker para notificaciones Push
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('firebase-messaging-sw.js')
                 .then((registration) => {
-                    console.log("Service Worker registrado con éxito");
                     messaging.useServiceWorker(registration);
-
-                    // 3. Pedir permiso al usuario
                     return Notification.requestPermission();
                 })
                 .then((permission) => {
                     if (permission === 'granted') {
-                        console.log("Permiso de notificaciones concedido");
-                        
-                        // 4. Obtener el Token del dispositivo
-                        // SUSTITUYE ESTA CLAVE POR TU CLAVE VAPID PÚBLICA DE FIREBASE
-                        return messaging.getToken({ vapidKey: 'TU_CLAVE_VAPID_AQUI' });
+                        // CLAVE INSERTADA AQUÍ:
+                        return messaging.getToken({ vapidKey: 'BGeQVz48jqOYPJSJLZcs9c6f0iQhhlwyUw-Je7sayrd9TGaeppIE7BR6qa639euoUJ64DrLe3JVPv_lp1w946Lk' });
                     } else {
                         throw new Error("Permiso denegado");
                     }
                 })
                 .then((token) => {
                     if (token) {
-                        // 5. Guardar el token en la base de datos para Pedro
                         db.ref('trabajadores/pedro/token').set(token);
-                        console.log("Token actualizado en Firebase");
+                        console.log("Token guardado con éxito");
                     }
                 })
                 .catch((err) => {
-                    console.error("Fallo en el sistema de notificaciones:", err);
-                    alert("Error al activar notificaciones. Asegúrate de usar HTTPS.");
+                    console.error("Fallo en activación:", err);
+                    alert("Asegúrate de estar usando HTTPS para recibir avisos.");
                 });
             }
 
-            // Ocultar pantalla de activación y hacer un pitido de prueba
             document.getElementById('overlay').style.display = 'none';
             reproducirPitido(440, 0.1); 
         }
@@ -113,7 +102,6 @@
             osc.stop(audioCtx.currentTime + duracion);
         }
 
-        // Escucha en tiempo real de nuevas tareas
         db.ref('trabajadores/pedro/servicio_actual').on('value', (snap) => {
             const data = snap.val();
             if (data && data.estado === "pendiente") {
@@ -122,7 +110,6 @@
                 document.getElementById('cli-name').innerText = data.cliente;
                 document.getElementById('task-desc').innerText = data.tarea;
                 
-                // Patrón de alerta: Doble pitido y vibración
                 reproducirPitido(660, 0.3);
                 setTimeout(() => reproducirPitido(880, 0.4), 400);
                 if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
