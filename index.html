@@ -103,64 +103,65 @@
             const txt = document.getElementById('texto-espera');
             const cont = document.getElementById('contador-gigante');
         
-            // Función única para decidir si mostrar o no el bloqueo
-            function refrescarEstadoPantalla(segundos) {
-                console.log("Estado -> Autorizado:", autorizado, " | Segundos:", segundos);
+            let segundosGlobal = 0; // Para saber en qué número va la cuenta atrás
         
-                if (segundos > 0) {
-                    // SIEMPRE que haya cuenta atrás, mostramos el bloqueo y el número
+            function refrescarPantalla() {
+                // REGLA 1: Si hay cuenta atrás (> 0), se muestra el número gigante y la capa de bloqueo
+                if (segundosGlobal > 0) {
                     capa.style.display = 'flex';
                     cont.style.display = 'block';
-                    cont.innerText = segundos;
+                    cont.innerText = segundosGlobal;
                     icon.style.opacity = "0.2";
                     txt.style.opacity = "0.2";
-                } else {
-                    // Si la cuenta atrás es 0 o null...
-                    cont.style.display = 'none';
-                    icon.style.opacity = "1";
-                    txt.style.opacity = "1";
+                    return; // Salimos, no hace falta mirar más
+                }
         
-                    if (autorizado) {
-                        // Si el master aceptó, fuera pantalla de una vez
-                        capa.style.display = 'none';
-                    } else {
-                        // Si no está aceptado, se queda el bloqueo con el símbolo 🚫
-                        capa.style.display = 'flex';
-                    }
+                // REGLA 2: Si NO hay cuenta atrás (es 0)...
+                cont.style.display = 'none';
+                icon.style.opacity = "1";
+                txt.style.opacity = "1";
+        
+                if (autorizado) {
+                    // SOLO si el master ha dado a "Empezar" (cuenta atrás llegó a 0)
+                    // y el jugador está aceptado, se quita el bloqueo.
+                    capa.style.display = 'none';
+                } else {
+                    // Si la cuenta es 0 pero NO está autorizado, se queda el candado/prohibido
+                    capa.style.display = 'flex';
+                    icon.innerText = "🚫";
+                    txt.innerText = "ESPERANDO ACEPTACIÓN...";
                 }
             }
         
-            // 1. Escuchar Aceptación
+            // Escuchar cambios en la autorización
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
                     db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente" });
                 } else {
-                    if(s.estado === "pendiente") {
-                        autorizado = false;
-                        icon.innerText = "🚫";
-                        txt.innerText = "ESPERANDO ACEPCIÓN...";
-                    } else {
+                    if(s.estado === "autorizado") {
                         autorizado = true;
                         icon.innerText = "✅";
-                        txt.innerText = "¡ACEPTADO! PREPÁRATE...";
+                        txt.innerText = "¡ACEPTADO! ESPERA AL MASTER...";
                         if(miMatriz.length === 0) generarCartonLocal();
+                    } else {
+                        autorizado = false;
                     }
-                    // Al cambiar el estado de autorización, comprobamos si debemos quitar el bloqueo
-                    db.ref('bingo/cuentaAtras').once('value', sCont => {
-                        refrescarEstadoPantalla(sCont.val() || 0);
-                    });
+                    refrescarPantalla();
                 }
             });
         
-            // 2. Escuchar Cuenta Atrás
+            // Escuchar cambios en la cuenta atrás
             db.ref('bingo/cuentaAtras').on('value', snap => {
-                refrescarEstadoPantalla(snap.val() || 0);
+                segundosGlobal = snap.val() || 0;
+                refrescarPantalla();
             });
         
             escucharBolas();
         }
-
+   
+        
+        
         function generarCartonLocal() {
             // Lógica simplificada de generación (Regla de adyacencia incluida)
             let matriz = Array.from({length: 4}, () => Array(8).fill(true));
@@ -217,4 +218,5 @@
     </script>
 </body>
 </html>
+
 
