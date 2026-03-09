@@ -57,28 +57,46 @@
         const messaging = firebase.messaging();
         let audioCtx;
 
+        // FUNCIÓN PRINCIPAL DE ACTIVACIÓN
         function activarTodo() {
+            // 1. Activar Audio Context (necesario para sonidos en móviles)
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
-            .then((registration) => {
-                messaging.useServiceWorker(registration);
-                return Notification.requestPermission();
-            })
-            .then((permission) => {
-                if (permission === 'granted') {
-                    // AQUÍ PEGA TU CLAVE VAPID PÚBLICA (DE FIREBASE CONSOLE)
-                    return messaging.getToken({ vapidKey: 'TU_CLAVE_VAPID_AQUI' });
-                }
-            })
-            .then((token) => {
-                if (token) {
-                    db.ref('trabajadores/pedro/token').set(token);
-                    console.log("Token guardado con éxito");
-                }
-            })
-            .catch(err => console.error("Error en activación:", err));
+            // 2. Registrar el Service Worker para notificaciones Push
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log("Service Worker registrado con éxito");
+                    messaging.useServiceWorker(registration);
 
+                    // 3. Pedir permiso al usuario
+                    return Notification.requestPermission();
+                })
+                .then((permission) => {
+                    if (permission === 'granted') {
+                        console.log("Permiso de notificaciones concedido");
+                        
+                        // 4. Obtener el Token del dispositivo
+                        // SUSTITUYE ESTA CLAVE POR TU CLAVE VAPID PÚBLICA DE FIREBASE
+                        return messaging.getToken({ vapidKey: 'TU_CLAVE_VAPID_AQUI' });
+                    } else {
+                        throw new Error("Permiso denegado");
+                    }
+                })
+                .then((token) => {
+                    if (token) {
+                        // 5. Guardar el token en la base de datos para Pedro
+                        db.ref('trabajadores/pedro/token').set(token);
+                        console.log("Token actualizado en Firebase");
+                    }
+                })
+                .catch((err) => {
+                    console.error("Fallo en el sistema de notificaciones:", err);
+                    alert("Error al activar notificaciones. Asegúrate de usar HTTPS.");
+                });
+            }
+
+            // Ocultar pantalla de activación y hacer un pitido de prueba
             document.getElementById('overlay').style.display = 'none';
             reproducirPitido(440, 0.1); 
         }
@@ -95,6 +113,7 @@
             osc.stop(audioCtx.currentTime + duracion);
         }
 
+        // Escucha en tiempo real de nuevas tareas
         db.ref('trabajadores/pedro/servicio_actual').on('value', (snap) => {
             const data = snap.val();
             if (data && data.estado === "pendiente") {
