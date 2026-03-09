@@ -1,12 +1,8 @@
-self.addEventListener('install', (e) => { 
-    self.skipWaiting(); 
-});
-
-self.addEventListener('activate', (e) => {
-    e.waitUntil(clients.claim());
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
 });
 
 self.addEventListener('fetch', (e) => {
-    // Es vital que responda con algo para que se considere PWA válida
-    e.respondWith(fetch(e.request));
+    // Esto es lo que "engaña" al navegador para permitir la instalación
+    e.respondWith(fetch(e.request).catch(() => {}));
 });
