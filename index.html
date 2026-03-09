@@ -23,28 +23,24 @@
             flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* PANTALLA DE BLOQUEO / ESPERA / CUENTA ATRÁS */
         #bloqueo { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             background: #0f0c29; z-index: 15000; 
             display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
         }
 
-        .icon-status { font-size: 8rem; margin-bottom: 20px; transition: all 0.5s ease; }
+        .icon-status { font-size: 8rem; margin-bottom: 20px; }
         .espera-prohibido { color: var(--fail); }
         .espera-check { color: var(--win); transform: scale(1.2); }
 
         #contador-bloqueo {
-            font-size: 15rem; font-weight: 900; color: white;
-            text-shadow: 0 0 30px var(--accent);
-            display: none;
-            -webkit-text-stroke: 3px var(--accent);
-            animation: pulse 0.5s infinite alternate;
+            font-size: 18rem; font-weight: 900; color: white;
+            text-shadow: 0 0 40px var(--accent);
+            display: none; /* Se activa por JS */
+            -webkit-text-stroke: 4px var(--accent);
+            z-index: 16000;
         }
 
-        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
-
-        /* INTERFAZ DEL JUEGO */
         aside { 
             width: 20vw; max-width: 100px; background: rgba(255, 255, 255, 0.1); 
             border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; 
@@ -78,7 +74,6 @@
         <h1 style="color:var(--accent); margin-bottom:30px;">BINGO ALDEA BELLA</h1>
         <input type="text" id="input-nombre" class="input-nombre" placeholder="TU NOMBRE AQUÍ..." maxlength="12">
         <button class="btn-entrar" onclick="procesarEntrada()">ENTRAR A JUGAR</button>
-        <button id="btn-instalar-jugador" style="display:none; margin-top: 20px;" onclick="instalarPWA()">INSTALAR APP</button>
     </div>
 
     <div id="bloqueo">
@@ -113,12 +108,7 @@
         let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
         let estadoAutorizacion = "pendiente";
 
-        window.onload = () => {
-            if(miNombre) {
-                document.getElementById('pantalla-registro').style.display = 'none';
-                iniciarConexionFirebase();
-            }
-        };
+        window.onload = () => { if(miNombre) { document.getElementById('pantalla-registro').style.display = 'none'; iniciarConexionFirebase(); } };
 
         function procesarEntrada() {
             const val = document.getElementById('input-nombre').value.trim().toUpperCase();
@@ -126,12 +116,11 @@
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
             document.getElementById('pantalla-registro').style.display = 'none';
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
             iniciarConexionFirebase();
         }
 
         function iniciarConexionFirebase() {
-            // 1. Escuchar Solicitud de Acceso
+            // Lógica de Solicitudes (🚫 y ✅)
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 const b = document.getElementById('bloqueo');
@@ -143,21 +132,18 @@
                 } else {
                     b.style.display = 'flex';
                     estadoAutorizacion = s.estado;
-
                     if(s.estado === "pendiente") {
-                        icon.innerText = "🚫";
-                        icon.className = "icon-status espera-prohibido";
+                        icon.innerText = "🚫"; icon.className = "icon-status espera-prohibido";
                         statusTxt.innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#aaa;">Espera a que te acepten...</span>`;
                     } else if(s.estado === "autorizado") {
-                        icon.innerText = "✅";
-                        icon.className = "icon-status espera-check";
+                        icon.innerText = "✅"; icon.className = "icon-status espera-check";
                         statusTxt.innerHTML = `¡ACEPTADO!<br><span style="font-size:1.2rem; color:#aaa;">La partida empezará pronto...</span>`;
-                        if(miMatriz.length === 0) cargarJuego(); 
+                        if(miMatriz.length === 0) cargarJuego();
                     }
                 }
             });
 
-            // 2. Escuchar Cuenta Atrás (Sobre la misma pantalla de bloqueo)
+            // Lógica de Cuenta Atrás (Forzada)
             db.ref('bingo/cuentaAtras').on('value', snap => {
                 const seg = snap.val();
                 const divCont = document.getElementById('contador-bloqueo');
@@ -166,76 +152,65 @@
                 const b = document.getElementById('bloqueo');
 
                 if (seg > 0) {
-                    // Ocultamos el icono y el texto para dejar paso al número gigante
+                    // MODO CUENTA ATRÁS ACTIVO
+                    b.style.display = 'flex';
                     icon.style.display = 'none';
                     statusTxt.style.display = 'none';
                     divCont.style.display = 'block';
                     divCont.innerText = seg;
-                    b.style.display = 'flex'; // Aseguramos que el bloqueo esté visible
                 } else {
+                    // MODO JUEGO O ESPERA
                     divCont.style.display = 'none';
-                    // Si ya estamos autorizados y el contador es 0, ocultamos el bloqueo para jugar
                     if(estadoAutorizacion === "autorizado") {
-                        b.style.display = 'none';
+                        b.style.display = 'none'; // Quitar bloqueo para jugar
                     } else {
-                        // Si no está autorizado, volvemos a mostrar el icono de espera
+                        // Volver a mostrar iconos si no está autorizado
                         icon.style.display = 'block';
                         statusTxt.style.display = 'block';
                     }
                 }
             });
 
-            // Resto de oyentes (bolas, idPartida...)
-            escucharGeneral();
-        }
-
-        function escucharGeneral() {
+            escucharBolas();
+            
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
                 if (idServidor && idServidor != idPartidaActual) {
-                    localStorage.clear(); 
+                    localStorage.clear();
                     localStorage.setItem('aldea_uid', miId);
                     localStorage.setItem('aldea_nombre', miNombre);
                     localStorage.setItem('id_partida_local', idServidor);
-                    window.location.reload(true); 
+                    window.location.reload(true);
                 }
             });
-            escucharBolas();
         }
 
         function cargarJuego() {
             let storage = localStorage.getItem('mi_carton_data');
-            if(storage) {
-                miMatriz = JSON.parse(storage);
-            } else {
-                miMatriz = generarCarton();
-                localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
-            }
-            dibujar(); 
+            if(storage) { miMatriz = JSON.parse(storage); } 
+            else { miMatriz = generarCarton(); localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz)); }
+            dibujar();
         }
 
         function generarCarton() {
             let matriz = Array.from({length: 4}, () => Array(8).fill(true));
             for (let f = 0; f < 4; f++) {
-                let huecosEnFila = 0;
-                let intentos = 0;
-                while (huecosEnFila < 3 && intentos < 200) {
-                    intentos++;
-                    let c = Math.floor(Math.random() * 8);
+                let huecos = 0; let intentos = 0;
+                while (huecos < 3 && intentos < 200) {
+                    intentos++; let c = Math.floor(Math.random() * 8);
                     if (matriz[f][c] === true) {
                         if (c > 1 && matriz[f][c-1] === null && matriz[f][c-2] === null) continue;
                         if (c < 6 && matriz[f][c+1] === null && matriz[f][c+2] === null) continue;
                         if (f > 1 && matriz[f-1][c] === null && matriz[f-2][c] === null) continue;
                         if (f < 2 && matriz[f+1][c] === null && matriz[f+2][c] === null) continue;
-                        matriz[f][c] = null; huecosEnFila++;
+                        matriz[f][c] = null; huecos++;
                     }
                 }
-                if (huecosEnFila < 3) return generarCarton();
+                if (huecos < 3) return generarCarton();
             }
             for (let c = 0; c < 8; c++) {
                 let min = (c * 10) + 1; let max = (c * 10) + 10;
-                let numerosCol = [];
-                for (let i = min; i <= max; i++) numerosCol.push(i);
+                let numerosCol = []; for (let i = min; i <= max; i++) numerosCol.push(i);
                 numerosCol.sort(() => Math.random() - 0.5);
                 let vals = [];
                 for (let f = 0; f < 4; f++) if (matriz[f][c] === true) vals.push(numerosCol.pop());
@@ -247,18 +222,14 @@
         }
 
         function dibujar() {
-            const g = document.getElementById('bingo-grid'); 
-            g.innerHTML = "";
+            const g = document.getElementById('bingo-grid'); g.innerHTML = "";
             miMatriz.forEach((fila, fi) => {
                 fila.forEach((num, ci) => {
                     const d = document.createElement('div');
                     d.className = num ? 'cell' : 'cell empty';
-                    d.id = `c-${fi}-${ci}`; 
-                    d.innerText = num || "";
+                    d.id = `c-${fi}-${ci}`; d.innerText = num || "";
                     if(num) {
-                        if(localStorage.getItem(`m_${fi}_${ci}`)) {
-                            d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
-                        }
+                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
                         d.onclick = () => marcar(d, fi, ci, num);
                     }
                     g.appendChild(d);
@@ -311,8 +282,7 @@
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
                             numEnFila++; numerosLinea.push(miMatriz[f][c]);
-                            const el = document.getElementById(`c-${f}-${c}`);
-                            if(el && el.classList.contains('marked-ok')) ok++;
+                            if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
                         }
                     }
                     if(ok === numEnFila && numEnFila > 0) {
@@ -321,19 +291,6 @@
                         break;
                     }
                 }
-            }
-        }
-
-        let promptInstalacion;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); promptInstalacion = e;
-            document.getElementById('btn-instalar-jugador').style.display = 'block';
-        });
-        async function instalarPWA() {
-            if (promptInstalacion) {
-                promptInstalacion.prompt();
-                const { outcome } = await promptInstalacion.userChoice;
-                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
             }
         }
     </script>
