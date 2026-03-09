@@ -6,6 +6,7 @@
     <title>MULTISERVICIOS - PEDRO</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
     <style>
         * { box-sizing: border-box; text-transform: uppercase; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -74,15 +75,40 @@
     </main>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://tokentest-87f09-default-rtdb.europe-west1.firebasedatabase.app" };
+        const firebaseConfig = { 
+            databaseURL: "https://tokentest-87f09-default-rtdb.europe-west1.firebasedatabase.app" 
+            // NOTA: Para que las notificaciones funcionen, aquí deberás pegar tu configuración 
+            // completa (apiKey, appId, etc.) de la consola de Firebase.
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const messaging = firebase.messaging();
 
         let audioContext;
 
-        // Función para permitir el audio al inicio
+        // Función para permitir el audio al inicio e implementar Notificaciones Push
         function activarAudio() {
+            // Lógica de AudioContext original
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Implementación de Permisos de Notificación y Token
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('PERMISO CONCEDIDO');
+                    // Obtener el Token (la dirección única del móvil de Pedro)
+                    // REEMPLAZA 'TU_CLAVE_VAPID_PUBLICA' por la de tu consola de Firebase
+                    messaging.getToken({ vapidKey: 'TU_CLAVE_VAPID_PUBLICA' })
+                        .then((currentToken) => {
+                            if (currentToken) {
+                                // Guardamos el token en Firebase
+                                db.ref('trabajadores/pedro/token').set(currentToken);
+                            }
+                        }).catch((err) => {
+                            console.log('Error al obtener token', err);
+                        });
+                }
+            });
+
             document.getElementById('overlay').style.display = 'none';
             // Sonido de confirmación corto
             reproducirPitido(440, 0.1); 
