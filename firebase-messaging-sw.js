@@ -13,29 +13,22 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ESTO ES LO QUE SE EJECUTA CUANDO EL MÓVIL ESTÁ BLOQUEADO
 messaging.onBackgroundMessage((payload) => {
-  console.log('NOTIFICACIÓN RECIBIDA EN SEGUNDO PLANO:', payload);
-
-  const notificationTitle = payload.notification.title || "⚠️ NUEVA TAREA";
+  const notificationTitle = payload.notification.title || "NUEVA ORDEN";
   const notificationOptions = {
-    body: payload.notification.body || "REVISA LA APLICACIÓN PARA VER LOS DETALLES",
+    body: payload.notification.body,
     icon: 'https://via.placeholder.com/192/00d4ff/ffffff?text=M',
-    vibrate: [200, 100, 200, 100, 200],
-    tag: 'nueva-tarea' // EVITA QUE SE AMONTONEN MIL AVISOS
+    vibrate: [500, 200, 500],
+    tag: 'orden-urgente'
   };
-
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// ESCUCHADOR PARA QUE AL TOCAR LA NOTIFICACIÓN SE ABRA LA APP
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      if (windowClients.length > 0) {
-        return windowClients[0].focus();
-      }
+      if (windowClients.length > 0) return windowClients[0].focus();
       return clients.openWindow('/trabajadores.html');
     })
   );
