@@ -170,22 +170,28 @@
             document.getElementById('tabla-80').appendChild(d);
         }
 
+
         function comenzarPartida() {
-            if (jugando) { toggleJuego(); return; }
             let segundos = 10;
-            const overlay = document.getElementById('count-overlay');
+            const overlay = document.getElementById('countdown-overlay');
             overlay.style.display = 'flex';
             document.getElementById('btn-start').disabled = true;
-
+        
             let countdown = setInterval(() => {
                 overlay.innerText = segundos;
                 db.ref('bingo/estado').set("CUENTA_" + segundos);
+                
                 if (segundos === 0) {
                     clearInterval(countdown);
                     overlay.style.display = 'none';
                     document.getElementById('btn-start').disabled = false;
                     db.ref('bingo/estado').set("JUGANDO");
-                    toggleJuego();
+                    
+                    // RETRASO DE 5 SEGUNDOS PARA LA PRIMERA BOLA
+                    setTimeout(() => {
+                        intervaloVelocidad = 4000; // Configura el resto a 4 segundos
+                        toggleJuego(); 
+                    }, 5000);
                 }
                 segundos--;
             }, 1000);
@@ -312,5 +318,6 @@
     </script>
 </body>
 </html>
+
 
 
