@@ -102,8 +102,8 @@
         let bolasEnJuego = new Set();
         let yaHuboLinea = false;
         let miMatriz = [];
+        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
 
-        // AL CARGAR, SI YA TENEMOS NOMBRE, OCULTAMOS REGISTRO
         window.onload = () => {
             if(miNombre) {
                 document.getElementById('pantalla-registro').style.display = 'none';
@@ -117,25 +117,16 @@
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
             document.getElementById('pantalla-registro').style.display = 'none';
-            
-            // Intentar poner pantalla completa (solo funciona tras clic de usuario)
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
-            
             iniciarConexionFirebase();
         }
 
-
-// 1. Asegúrate de que esta variable esté fuera de las funciones
-        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
-            
         function iniciarConexionFirebase() {
-            // 1. Escuchar el ID de la partida global para reseteos
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
                 if (idServidor && idServidor != idPartidaActual) {
-                    console.log("Nueva partida detectada. Reseteando memoria...");
                     localStorage.clear(); 
                     localStorage.setItem('aldea_uid', miId);
                     localStorage.setItem('aldea_nombre', miNombre);
@@ -146,7 +137,6 @@
                 }
             });
         
-            // 2. Control de acceso y mensaje de "ACEPTADO"
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
@@ -157,22 +147,25 @@
                     document.getElementById('bloqueo').style.display = 'flex';
                     document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><small>Espera a ser aceptado...</small>`;
                 } else if(s.estado === "autorizado") {
-                    // Mantenemos el bloqueo pero con mensaje de éxito
                     document.getElementById('bloqueo').style.display = 'flex';
                     document.getElementById('bloqueo-status').innerHTML = `
                         <span style="color:var(--win); font-size: 2.5rem;">✔</span><br>
-                        ¡ACCESO CONCEDIDO!<br>
-                        <small style="font-size: 1.2rem; color: #00d2ff;">Esperando a que el Master inicie la partida...</small>
+                        ¡ACEPTADO!<br>
+                        <small style="font-size: 1.2rem; color: #00d2ff;">Esperando a que el Master inicie...</small>
                     `;
                 }
             });
         
-            // 3. Revelar el cartón solo cuando el estado sea CUENTA_X o JUGANDO
             db.ref('bingo/estado').on('value', snap => {
                 const estadoBingo = snap.val();
+                const bloqueoStatus = document.getElementById('bloqueo-status');
                 
-                if (estadoBingo && (estadoBingo.includes("CUENTA_") || estadoBingo === "JUGANDO")) {
-                    // Verificamos si este usuario específico ya está autorizado antes de mostrar nada
+                if (estadoBingo && estadoBingo.includes("CUENTA_")) {
+                    const segundo = estadoBingo.split("_")[1];
+                    bloqueoStatus.innerHTML = `PREPÁRATE...<br><span style="font-size:5rem; color:var(--accent); font-weight:bold;">${segundo}</span>`;
+                }
+
+                if (estadoBingo === "JUGANDO") {
                     db.ref('bingo/solicitudes/' + miId + '/estado').once('value', stateSnap => {
                         if (stateSnap.val() === "autorizado") {
                             document.getElementById('bloqueo').style.display = 'none';
@@ -184,9 +177,9 @@
                 }
             });
         
-            // 4. Activar la escucha de bolas y premios
             escucharBolas();
         }
+
         function cargarJuego() {
             let storage = localStorage.getItem('mi_carton_data');
             if(storage) {
@@ -195,7 +188,6 @@
                 miMatriz = generarCarton();
                 localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
             }
-            // ¡ESTA LÍNEA ES VITAL! Sin ella el cartón no se ve
             dibujar(); 
         }
 
@@ -266,14 +258,13 @@
             
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
-                // Enviamos aviso de BINGO con el nombre
                 db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
                     let ok = 0; let numEnFila = 0;
-                    let numerosLinea = []; // Guardaremos los números para que el Master los vea
+                    let numerosLinea = [];
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
                             numEnFila++;
@@ -283,7 +274,6 @@
                     }
                     if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-                        // ENVIAMOS LA LÍNEA AL MASTER
                         db.ref('bingo/avisoPremio').set({ 
                             nombre: miNombre, 
                             tipo: "LINEA",
@@ -296,7 +286,6 @@
             }
         }
 
-        // PWA E INSTALACIÓN
         let promptInstalacion;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); promptInstalacion = e;
@@ -312,9 +301,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
