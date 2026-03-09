@@ -23,22 +23,25 @@
             flex-direction: column; align-items: center; justify-content: center;
         }
 
+        /* PANTALLA DE BLOQUEO */
         #bloqueo { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             background: #0f0c29; z-index: 15000; 
             display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
         }
 
-        .icon-status { font-size: 8rem; margin-bottom: 20px; }
+        .icon-status { font-size: 8rem; margin-bottom: 10px; transition: all 0.3s; }
         .espera-prohibido { color: var(--fail); }
-        .espera-check { color: var(--win); transform: scale(1.2); }
+        .espera-check { color: var(--win); }
 
+        /* CUENTA ATRÁS GIGANTE DEBAJO DEL CHECK */
         #contador-bloqueo {
-            font-size: 18rem; font-weight: 900; color: white;
-            text-shadow: 0 0 40px var(--accent);
-            display: none; /* Se activa por JS */
-            -webkit-text-stroke: 4px var(--accent);
-            z-index: 16000;
+            font-size: 12rem; /* Ajustado para que quepa con el icono */
+            font-weight: 900; color: white;
+            text-shadow: 0 0 30px var(--accent);
+            display: none;
+            -webkit-text-stroke: 3px var(--accent);
+            line-height: 1;
         }
 
         aside { 
@@ -48,16 +51,8 @@
         }
 
         main { flex-grow: 1; height: 100%; overflow: hidden; position: relative; }
-        .grid-bingo { 
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 5px; width: 100%; height: 100%; 
-        }
-        
-        .cell { 
-            background: white; color: #2c3e50; display: flex; align-items: center; 
-            justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
-            box-shadow: 0 4px 0 #bdc3c7; 
-        }
+        .grid-bingo { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); gap: 5px; width: 100%; height: 100%; }
+        .cell { background: white; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 0 #bdc3c7; }
         .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
@@ -78,7 +73,7 @@
 
     <div id="bloqueo">
         <div id="icon-container" class="icon-status">🚫</div>
-        <h1 id="bloqueo-status" style="font-size: 2rem; color: white; margin: 10px 0;">ESPERANDO...</h1>
+        <h1 id="bloqueo-status" style="font-size: 1.5rem; color: white; margin: 10px 0;">ESPERANDO...</h1>
         <div id="contador-bloqueo">--</div>
     </div>
 
@@ -88,9 +83,7 @@
         <div id="h-2" class="historial">--</div>
     </aside>
 
-    <main>
-        <div class="grid-bingo" id="bingo-grid"></div>
-    </main>
+    <main><div class="grid-bingo" id="bingo-grid"></div></main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -105,7 +98,6 @@
         let bolasEnJuego = new Set();
         let yaHuboLinea = false;
         let miMatriz = [];
-        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
         let estadoAutorizacion = "pendiente";
 
         window.onload = () => { if(miNombre) { document.getElementById('pantalla-registro').style.display = 'none'; iniciarConexionFirebase(); } };
@@ -120,7 +112,7 @@
         }
 
         function iniciarConexionFirebase() {
-            // Lógica de Solicitudes (🚫 y ✅)
+            // SOLICITUDES
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 const b = document.getElementById('bloqueo');
@@ -134,52 +126,36 @@
                     estadoAutorizacion = s.estado;
                     if(s.estado === "pendiente") {
                         icon.innerText = "🚫"; icon.className = "icon-status espera-prohibido";
-                        statusTxt.innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#aaa;">Espera a que te acepten...</span>`;
+                        statusTxt.innerHTML = `HOLA ${s.nombre}<br>Espera aprobación...`;
                     } else if(s.estado === "autorizado") {
                         icon.innerText = "✅"; icon.className = "icon-status espera-check";
-                        statusTxt.innerHTML = `¡ACEPTADO!<br><span style="font-size:1.2rem; color:#aaa;">La partida empezará pronto...</span>`;
+                        statusTxt.innerHTML = `¡ACEPTADO!`;
                         if(miMatriz.length === 0) cargarJuego();
                     }
                 }
             });
 
-            // Lógica de Cuenta Atrás (Forzada)
+            // CUENTA ATRÁS (Ahora convive con el icono)
             db.ref('bingo/cuentaAtras').on('value', snap => {
                 const seg = snap.val();
                 const divCont = document.getElementById('contador-bloqueo');
-                const icon = document.getElementById('icon-container');
-                const statusTxt = document.getElementById('bloqueo-status');
                 const b = document.getElementById('bloqueo');
 
                 if (seg > 0) {
-                    // MODO CUENTA ATRÁS ACTIVO
                     b.style.display = 'flex';
-                    icon.style.display = 'none';
-                    statusTxt.style.display = 'none';
                     divCont.style.display = 'block';
                     divCont.innerText = seg;
                 } else {
-                    // MODO JUEGO O ESPERA
                     divCont.style.display = 'none';
-                    if(estadoAutorizacion === "autorizado") {
-                        b.style.display = 'none'; // Quitar bloqueo para jugar
-                    } else {
-                        // Volver a mostrar iconos si no está autorizado
-                        icon.style.display = 'block';
-                        statusTxt.style.display = 'block';
-                    }
+                    if(estadoAutorizacion === "autorizado") b.style.display = 'none';
                 }
             });
 
             escucharBolas();
             
             db.ref('bingo/idPartida').on('value', snap => {
-                const idServidor = snap.val();
-                if (idServidor && idServidor != idPartidaActual) {
-                    localStorage.clear();
-                    localStorage.setItem('aldea_uid', miId);
-                    localStorage.setItem('aldea_nombre', miNombre);
-                    localStorage.setItem('id_partida_local', idServidor);
+                if (snap.val() && snap.val() != localStorage.getItem('id_partida_local')) {
+                    localStorage.setItem('id_partida_local', snap.val());
                     window.location.reload(true);
                 }
             });
@@ -278,15 +254,15 @@
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
-                    let ok = 0; let numEnFila = 0; let numerosLinea = [];
+                    let ok = 0; let numEnFila = 0;
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
-                            numEnFila++; numerosLinea.push(miMatriz[f][c]);
+                            numEnFila++;
                             if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
                         }
                     }
                     if(ok === numEnFila && numEnFila > 0) {
-                        db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "LINEA", numeros: numerosLinea.join(", ") });
+                        db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "LINEA" });
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
                     }
