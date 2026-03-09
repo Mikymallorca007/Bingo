@@ -2,313 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>JUGADOR - Bingo Aldea Bella</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PWA</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f0c29">
-
     <style>
-        :root { --bg: #0f0c29; --accent: #00d2ff; --win: #2ecc71; --fail: #e74c3c; }
-        * { box-sizing: border-box; touch-action: manipulation; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; background: linear-gradient(to right, #0f0c29, #302b63, #24243e); 
-            color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; 
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        #btnInstalar { 
+            display: none; padding: 20px; background: #2ecc71; color: white; 
+            border: none; border-radius: 10px; font-size: 20px; cursor: pointer;
         }
-        
-        /* PANTALLA DE REGISTRO INTEGRADA */
-        #pantalla-registro {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f0c29; z-index: 10000; display: flex; 
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .input-nombre {
-            background: rgba(255,255,255,0.1); border: 2px solid var(--accent);
-            border-radius: 15px; padding: 15px; color: white; font-size: 1.5rem;
-            text-align: center; width: 80%; max-width: 400px; margin-bottom: 20px; outline: none;
-        }
-        .btn-entrar {
-            background: var(--win); color: white; border: none; padding: 15px 40px;
-            border-radius: 15px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
-        }
-
-        aside { 
-            width: 20vw; max-width: 100px; background: rgba(255, 255, 255, 0.1); 
-            border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; 
-            flex-direction: column; align-items: center; backdrop-filter: blur(5px); flex-shrink: 0;
-        }
-        .bola-cantada { 
-            background: white; color: #1e272e; width: 65px; height: 65px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; 
-            font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; 
-        }
-        .historial { 
-            background: rgba(0,0,0,0.3); width: 38px; height: 38px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold;
-        }
-
-        main { flex-grow: 1; height: 100%; overflow: hidden; }
-        .grid-bingo { 
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 5px; width: 100%; height: 100%; 
-        }
-        .cell { 
-            background: white; color: #2c3e50; display: flex; align-items: center; 
-            justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
-            box-shadow: 0 4px 0 #bdc3c7; 
-        }
-        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
-        .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
-        .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
-
-        #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
-        #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
-
-    <div id="pantalla-registro">
-        <h1 style="color:var(--accent); margin-bottom:30px;">BINGO ALDEA BELLA</h1>
-        <input type="text" id="input-nombre" class="input-nombre" placeholder="TU NOMBRE AQUÍ..." maxlength="12">
-        <button class="btn-entrar" onclick="procesarEntrada()">ENTRAR A JUGAR</button>
-        <button id="btn-instalar-jugador" onclick="instalarPWA()">INSTALAR APP</button>
-    </div>
-
-    <div id="bloqueo">
-        <div class="status-box">
-            <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0;">CONECTANDO AL BINGO...</h1>
-        </div>
-    </div>
-
-    <aside>
-        <div id="bola-viva" class="bola-cantada">--</div>
-        <div id="h-1" class="historial">--</div>
-        <div id="h-2" class="historial">--</div>
-    </aside>
-
-    <main><div class="grid-bingo" id="bingo-grid"></div></main>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        let miId = localStorage.getItem('aldea_uid') || 'u' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('aldea_uid', miId);
-        let miNombre = localStorage.getItem('aldea_nombre');
-        let bolasEnJuego = new Set();
-        let yaHuboLinea = false;
-        let miMatriz = [];
-        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
-
-        window.onload = () => {
-            if(miNombre) {
-                document.getElementById('pantalla-registro').style.display = 'none';
-                iniciarConexionFirebase();
-            }
-        };
-
-function procesarEntrada() {
-    const val = document.getElementById('input-nombre').value.trim().toUpperCase();
-    if(val.length < 2) { alert("Nombre demasiado corto"); return; }
-    miNombre = val;
-    localStorage.setItem('aldea_nombre', miNombre);
-    document.getElementById('pantalla-registro').style.display = 'none';
+    <h1>Prueba de Instalación</h1>
+    <p>Si el manifest y el sw son correctos, aparecerá el botón:</p>
     
-    // Intento reforzado de pantalla completa
-    const docElm = document.documentElement;
-    if (docElm.requestFullscreen) {
-        docElm.requestFullscreen();
-    } else if (docElm.mozRequestFullScreen) { // Firefox
-        docElm.mozRequestFullScreen();
-    } else if (docElm.webkitRequestFullScreen) { // Chrome/Safari
-        docElm.webkitRequestFullScreen();
-    } else if (docElm.msRequestFullscreen) { // IE/Edge
-        docElm.msRequestFullscreen();
-    }
+    <button id="btnInstalar">HOLA, INSTÁLAME</button>
 
-    iniciarConexionFirebase();
-}
-
-
-        function iniciarConexionFirebase() {
-            db.ref('bingo/idPartida').on('value', snap => {
-                const idServidor = snap.val();
-                if (idServidor && idServidor != idPartidaActual) {
-                    localStorage.clear(); 
-                    localStorage.setItem('aldea_uid', miId);
-                    localStorage.setItem('aldea_nombre', miNombre);
-                    idPartidaActual = idServidor;
-                    localStorage.setItem('id_partida_local', idServidor);
-                    miMatriz = []; 
-                    location.reload(); 
-                }
-            });
-        
-            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                const s = snap.val();
-                if(!s) {
-                    db.ref('bingo/solicitudes/' + miId).set({ 
-                        nombre: miNombre, estado: "pendiente", fecha: Date.now() 
-                    });
-                } else if(s.estado === "pendiente") {
-                    document.getElementById('bloqueo').style.display = 'flex';
-                    document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><small>Espera a ser aceptado...</small>`;
-                } else if(s.estado === "autorizado") {
-                    document.getElementById('bloqueo').style.display = 'flex';
-                    document.getElementById('bloqueo-status').innerHTML = `
-                        <span style="color:var(--win); font-size: 2.5rem;">✔</span><br>
-                        ¡ACEPTADO!<br>
-                        <small style="font-size: 1.2rem; color: #00d2ff;">Esperando a que el Master inicie...</small>
-                    `;
-                }
-            });
-        
-            db.ref('bingo/estado').on('value', snap => {
-                const estadoBingo = snap.val();
-                const bloqueoStatus = document.getElementById('bloqueo-status');
-                
-                if (estadoBingo && estadoBingo.includes("CUENTA_")) {
-                    const segundo = estadoBingo.split("_")[1];
-                    bloqueoStatus.innerHTML = `PREPÁRATE...<br><span style="font-size:5rem; color:var(--accent); font-weight:bold;">${segundo}</span>`;
-                }
-
-                if (estadoBingo === "JUGANDO") {
-                    db.ref('bingo/solicitudes/' + miId + '/estado').once('value', stateSnap => {
-                        if (stateSnap.val() === "autorizado") {
-                            document.getElementById('bloqueo').style.display = 'none';
-                            if (miMatriz.length === 0) {
-                                cargarJuego();
-                            }
-                        }
-                    });
-                }
-            });
-        
-            escucharBolas();
+    <script>
+        // 1. Registrar el Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("SW registrado"))
+                .catch(err => console.log("Fallo SW", err));
         }
 
-        function cargarJuego() {
-            let storage = localStorage.getItem('mi_carton_data');
-            if(storage) {
-                miMatriz = JSON.parse(storage);
-            } else {
-                miMatriz = generarCarton();
-                localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
-            }
-            dibujar(); 
-        }
-
-        function generarCarton() {
-            let m = Array.from({length: 4}, () => Array(8).fill(null));
-            for(let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1; let max = (c * 10) + 10;
-                let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
-                let opcionesColumna = [];
-                for(let n = min; n <= max; n++) opcionesColumna.push(n);
-                let elegidos = opcionesColumna.sort(() => Math.random() - 0.5).slice(0, cantidadNumeros);
-                elegidos.sort((a, b) => a - b);
-                let filasDisponibles = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, cantidadNumeros).sort();
-                filasDisponibles.forEach((f, index) => { m[f][c] = elegidos[index]; });
-            }
-            return m;
-        }
-
-        function dibujar() {
-            const g = document.getElementById('bingo-grid'); g.innerHTML = "";
-            miMatriz.forEach((fila, fi) => {
-                fila.forEach((num, ci) => {
-                    const d = document.createElement('div');
-                    d.className = num ? 'cell' : 'cell empty';
-                    d.id = `c-${fi}-${ci}`; d.innerText = num || "";
-                    if(num) {
-                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
-                        d.onclick = () => marcar(d, fi, ci, num);
-                    }
-                    g.appendChild(d);
-                });
-            });
-        }
-
-        function marcar(el, fi, ci, num) {
-            if(el.classList.contains('marked-ok') || el.classList.contains('marked-error')) {
-                el.classList.remove('marked-ok', 'marked-error');
-                localStorage.removeItem(`m_${fi}_${ci}`);
-            } else {
-                el.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
-                localStorage.setItem(`m_${fi}_${ci}`, "1");
-                if(navigator.vibrate) navigator.vibrate(40);
-            }
-            verificarPremios();
-        }
-
-        function escucharBolas() {
-            db.ref('bingo/ultimaBola').on('value', snap => {
-                const n = snap.val();
-                if(n && n !== 0) {
-                    bolasEnJuego.add(n);
-                    document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
-                    document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
-                    document.getElementById('bola-viva').innerText = n;
-                    document.querySelectorAll('.marked-error').forEach(c => {
-                        if(bolasEnJuego.has(parseInt(c.innerText))) { c.className = 'cell marked-ok'; }
-                    });
-                    verificarPremios();
-                }
-            });
-            db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
-        }
-
-        function verificarPremios() {
-            let celdasVerdes = document.querySelectorAll('.marked-ok').length;
-            let totalNumerosEnCarton = 0;
-            miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
-            
-            if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
-                if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
-                db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
-                db.ref('bingo/estado').set("PAUSA_BINGO");
-            } 
-            else if(!yaHuboLinea) {
-                for(let f=0; f<4; f++) {
-                    let ok = 0; let numEnFila = 0;
-                    let numerosLinea = [];
-                    for(let c=0; c<8; c++) {
-                        if(miMatriz[f][c]) {
-                            numEnFila++;
-                            numerosLinea.push(miMatriz[f][c]);
-                            if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
-                        }
-                    }
-                    if(ok === numEnFila && numEnFila > 0) {
-                        if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-                        db.ref('bingo/avisoPremio').set({ 
-                            nombre: miNombre, 
-                            tipo: "LINEA",
-                            numeros: numerosLinea.join(", ") 
-                        });
-                        db.ref('bingo/estado').set("PAUSA_LINEA");
-                        break;
-                    }
-                }
-            }
-        }
-
-        let promptInstalacion;
+        // 2. Capturar el evento de instalación
+        let eventoInstalacion;
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); promptInstalacion = e;
-            document.getElementById('btn-instalar-jugador').style.display = 'block';
+            e.preventDefault();
+            eventoInstalacion = e;
+            // Si llegamos aquí, ¡el botón se mostrará!
+            document.getElementById('btnInstalar').style.display = 'block';
         });
-        async function instalarPWA() {
-            if (promptInstalacion) {
-                promptInstalacion.prompt();
-                const { outcome } = await promptInstalacion.userChoice;
-                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
+
+        document.getElementById('btnInstalar').addEventListener('click', async () => {
+            if (eventoInstalacion) {
+                eventoInstalacion.prompt();
+                const { outcome } = await eventoInstalacion.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('btnInstalar').style.display = 'none';
+                }
             }
-        }
+        });
     </script>
 </body>
 </html>
