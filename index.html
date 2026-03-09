@@ -48,7 +48,7 @@
             display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold;
         }
 
-        main { flex-grow: 1; height: 100%; overflow: hidden; }
+        main { flex-grow: 1; height: 100%; overflow: hidden; position: relative; }
         .grid-bingo { 
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
             gap: 5px; width: 100%; height: 100%; 
@@ -61,6 +61,14 @@
         .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
+
+        /* ESTILO PARA LA CUENTA ATRÁS EN EL JUGADOR */
+        #contador-pantalla {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 12rem; font-weight: 900; color: var(--accent);
+            text-shadow: 0 0 30px rgba(0, 210, 255, 0.5); z-index: 50; display: none;
+            pointer-events: none;
+        }
 
         #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
@@ -87,7 +95,10 @@
         <div id="h-2" class="historial">--</div>
     </aside>
 
-    <main><div class="grid-bingo" id="bingo-grid"></div></main>
+    <main>
+        <div id="contador-pantalla">--</div>
+        <div class="grid-bingo" id="bingo-grid"></div>
+    </main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -126,11 +137,9 @@
         }
 
         function iniciarConexionFirebase() {
-            // Sincronización con Nueva Partida del Master (ID Partida)
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
                 if (idServidor && idServidor != idPartidaActual) {
-                    console.log("Nueva partida detectada. Reseteando memoria...");
                     localStorage.clear(); 
                     localStorage.setItem('aldea_uid', miId);
                     localStorage.setItem('aldea_nombre', miNombre);
@@ -139,7 +148,6 @@
                 }
             });
             
-            // Estado de aceptación por el Master
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
@@ -151,10 +159,24 @@
                     document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#ccc;">Espera a que el Master te autorice.</span>`;
                 } else if(s.estado === "autorizado") {
                     document.getElementById('bloqueo').style.display = 'none';
-                    // Si el tablero está vacío, cargamos juego
                     if(document.getElementById('bingo-grid').children.length === 0) {
                         cargarJuego(); 
                     }
+                }
+            });
+
+            // ESCUCHA DEL CONTADOR (NUEVO)
+            db.ref('bingo/cuentaAtras').on('value', snap => {
+                const seg = snap.val();
+                const divContador = document.getElementById('contador-pantalla');
+                if (seg > 0) {
+                    divContador.innerText = seg;
+                    divContador.style.display = 'block';
+                    // Ocultar el cartón un poco para dar drama
+                    document.getElementById('bingo-grid').style.opacity = '0.2';
+                } else {
+                    divContador.style.display = 'none';
+                    document.getElementById('bingo-grid').style.opacity = '1';
                 }
             });
 
@@ -197,7 +219,6 @@
                     d.id = `c-${fi}-${ci}`; 
                     d.innerText = num || "";
                     if(num) {
-                        // Recuperar marcas guardadas de la sesión actual
                         if(localStorage.getItem(`m_${fi}_${ci}`)) {
                             d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
                         }
@@ -233,7 +254,6 @@
                         document.getElementById('h-1').innerText = v;
                         document.getElementById('bola-viva').innerText = n;
                         
-                        // Actualizar automáticamente celdas marcadas como error que ahora son correctas
                         document.querySelectorAll('.marked-error').forEach(c => {
                             if(bolasEnJuego.has(parseInt(c.innerText))) { 
                                 c.classList.replace('marked-error', 'marked-ok'); 
