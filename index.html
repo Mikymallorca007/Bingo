@@ -17,6 +17,22 @@
             color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; 
         }
         
+        /* PANTALLA DE REGISTRO INTEGRADA */
+        #pantalla-registro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0c29; z-index: 10000; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .input-nombre {
+            background: rgba(255,255,255,0.1); border: 2px solid var(--accent);
+            border-radius: 15px; padding: 15px; color: white; font-size: 1.5rem;
+            text-align: center; width: 80%; max-width: 400px; margin-bottom: 20px; outline: none;
+        }
+        .btn-entrar {
+            background: var(--win); color: white; border: none; padding: 15px 40px;
+            border-radius: 15px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+        }
+
         aside { 
             width: 20vw; max-width: 100px; background: rgba(255, 255, 255, 0.1); 
             border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; 
@@ -46,16 +62,22 @@
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
-        #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
+        #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
 
+    <div id="pantalla-registro">
+        <h1 style="color:var(--accent); margin-bottom:30px;">BINGO ALDEA BELLA</h1>
+        <input type="text" id="input-nombre" class="input-nombre" placeholder="TU NOMBRE AQUÍ..." maxlength="12">
+        <button class="btn-entrar" onclick="procesarEntrada()">ENTRAR A JUGAR</button>
+        <button id="btn-instalar-jugador" onclick="instalarPWA()">INSTALAR APP</button>
+    </div>
+
     <div id="bloqueo">
         <div class="status-box">
             <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0;">CONECTANDO AL BINGO...</h1>
-            <button id="btn-instalar-jugador" onclick="instalarPWA()">INSTALAR APP</button>
         </div>
     </div>
 
@@ -70,28 +92,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // PWA E INSTALACIÓN
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-        let promptInstalacion;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); promptInstalacion = e;
-            document.getElementById('btn-instalar-jugador').style.display = 'block';
-        });
-        async function instalarPWA() {
-            if (promptInstalacion) {
-                promptInstalacion.prompt();
-                const { outcome } = await promptInstalacion.userChoice;
-                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
-            }
-        }
-
-        // KEEP AWAKE (PANTALLA SIEMPRE ENCENDIDA)
-        let wakeLock = null;
-        const requestWakeLock = async () => {
-            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
-        };
-        window.addEventListener('focus', requestWakeLock);
-
         const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -103,64 +103,69 @@
         let yaHuboLinea = false;
         let miMatriz = [];
 
-        db.ref('bingo/solicitudes').on('value', snap => {
-            const list = document.getElementById('lista-espera');
-            const badge = document.getElementById('badge-count');
-            list.innerHTML = ""; 
-            let count = 0;
-            const data = snap.val();
-            
-            if(data) {
-                // Ordenamos por fecha para que el más nuevo salga arriba
-                const uids = Object.keys(data).sort((a,b) => (data[b].fecha || 0) - (data[a].fecha || 0));
-                
-                uids.forEach(uid => {
-                    if(data[uid].estado === "pendiente") {
-                        count++;
-                        let row = document.createElement('div');
-                        row.className = 'user-row';
-                        // Si el nombre ya existe en la lista, le ponemos un aviso visual
-                        row.innerHTML = `
-                            <span>${data[uid].nombre}</span>
-                            <div>
-                                <button class="btn-ok" onclick="admitir('${uid}')">ADMITIR</button>
-                                <button class="btn-kick" onclick="expulsar('${uid}')" style="background:#636e72">BORRAR</button>
-                            </div>`;
-                        list.appendChild(row);
-                    }
-                });
+        // AL CARGAR, SI YA TENEMOS NOMBRE, OCULTAMOS REGISTRO
+        window.onload = () => {
+            if(miNombre) {
+                document.getElementById('pantalla-registro').style.display = 'none';
+                iniciarConexionFirebase();
             }
-            badge.innerText = count; 
-            badge.style.display = count > 0 ? "block" : "none";
-        });
+        };
+
+        function procesarEntrada() {
+            const val = document.getElementById('input-nombre').value.trim().toUpperCase();
+            if(val.length < 2) { alert("Nombre demasiado corto"); return; }
+            miNombre = val;
+            localStorage.setItem('aldea_nombre', miNombre);
+            document.getElementById('pantalla-registro').style.display = 'none';
+            
+            // Intentar poner pantalla completa (solo funciona tras clic de usuario)
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+            
+            iniciarConexionFirebase();
+        }
+
+        function iniciarConexionFirebase() {
+            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                const s = snap.val();
+                if(!s) {
+                    db.ref('bingo/solicitudes/' + miId).set({ 
+                        nombre: miNombre, 
+                        estado: "pendiente",
+                        fecha: Date.now() 
+                    });
+                } else if(s.estado === "pendiente") {
+                    document.getElementById('bloqueo').style.display = 'flex';
+                    document.getElementById('bloqueo-status').innerHTML = `¡HOLA ${s.nombre}!<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
+                } else {
+                    document.getElementById('bloqueo').style.display = 'none';
+                    if(miMatriz.length === 0) cargarJuego();
+                }
+            });
+        }
+
+        // --- EL RESTO DEL CÓDIGO (ESTADO, JUEGO, DIBUJAR) SIGUE IGUAL ---
 
         db.ref('bingo/estado').on('value', snap => {
             const est = snap.val();
             const status = document.getElementById('bloqueo-status');
-            
             if(est && est.startsWith("CUENTA_")) {
                 const seg = est.split("_")[1];
                 document.getElementById('bloqueo').style.display = 'flex';
                 status.innerHTML = `<span style="font-size:6rem; color:yellow;">${seg}</span>`;
-                if(navigator.vibrate) navigator.vibrate(50);
             } 
             else if(est === "JUGANDO") {
-                if(document.getElementById('bloqueo').style.display === 'flex') { if(navigator.vibrate) navigator.vibrate(1000); }
                 document.getElementById('bloqueo').style.display = 'none';
             }
             else if(est === "ESPERANDO_INICIO") {
-                // SOLUCIÓN AL BUCLE: Solo recargar si hay un cartón viejo que limpiar
                 if(localStorage.getItem('mi_carton_data')) {
                     localStorage.removeItem('mi_carton_data');
                     for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
                     location.reload();
                 } else {
                     document.getElementById('bloqueo').style.display = 'flex';
-                    status.innerHTML = "PARTIDA FINALIZADA<br>Esperando nueva ronda...";
-                    // Limpiamos visualmente los números por si acaso
-                    document.getElementById('bola-viva').innerText = "--";
-                    document.getElementById('h-1').innerText = "--";
-                    document.getElementById('h-2').innerText = "--";
+                    status.innerHTML = "PREPARANDO SIGUIENTE RONDA...";
                 }
             }
         });
@@ -175,8 +180,7 @@
         function generarCarton() {
             let m = Array.from({length: 4}, () => Array(8).fill(null));
             for(let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1;
-                let max = (c * 10) + 10;
+                let min = (c * 10) + 1; let max = (c * 10) + 10;
                 let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
                 let opcionesColumna = [];
                 for(let n = min; n <= max; n++) opcionesColumna.push(n);
@@ -237,15 +241,13 @@
             let celdasVerdes = document.querySelectorAll('.marked-ok').length;
             let totalNumerosEnCarton = 0;
             miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
-            
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
-                    let ok = 0;
-                    let numEnFila = 0;
+                    let ok = 0; let numEnFila = 0;
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
                             numEnFila++;
@@ -258,6 +260,20 @@
                         break;
                     }
                 }
+            }
+        }
+
+        // PWA E INSTALACIÓN
+        let promptInstalacion;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); promptInstalacion = e;
+            document.getElementById('btn-instalar-jugador').style.display = 'block';
+        });
+        async function instalarPWA() {
+            if (promptInstalacion) {
+                promptInstalacion.prompt();
+                const { outcome } = await promptInstalacion.userChoice;
+                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
             }
         }
     </script>
