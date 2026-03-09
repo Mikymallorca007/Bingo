@@ -289,11 +289,12 @@
                 jugando = false;
                 clearTimeout(timerBingo);
                 
-                // Limpieza profunda de Firebase
+                // Borramos todo para que los jugadores vuelvan a pantalla de espera
                 db.ref('bingo/solicitudes').remove();
                 db.ref('bingo/avisoPremio').remove();
+                db.ref('bingo/ultimaBola').set(0); 
+                
                 db.ref('bingo').update({
-                    ultimaBola: 0,
                     estado: "ESPERANDO_INICIO",
                     lineaCantada: false
                 }).then(() => {
@@ -301,6 +302,9 @@
                 });
             }
         }
+
+        
     </script>
 </body>
 </html>
+
