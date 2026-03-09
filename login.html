@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MULTISERVICIOS - ACCESO</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; text-transform: uppercase; } /* TODO A MAYÚSCULAS */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; background: #121212; color: white; overflow: hidden; }
+        .login-card { width: 90%; max-width: 350px; padding: 30px; background: #1e1e1e; border-radius: 20px; text-align: center; }
+        h2 { color: #00d4ff; margin-bottom: 25px; letter-spacing: 2px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; background: #333; color: white; font-size: 1rem; text-align: center; }
+        button { width: 100%; padding: 15px; margin-top: 20px; border-radius: 10px; border: none; background: #00d4ff; color: #121212; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>MULTISERVICIOS</h2>
+        <input type="text" id="user" placeholder="USUARIO">
+        <input type="password" id="pass" placeholder="CONTRASEÑA">
+        <button onclick="entrar()">ENTRAR</button>
+    </div>
+    <script>
+        const firebaseConfig = { databaseURL: "https://tokentest-87f09-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function entrar() {
+            const u = document.getElementById('user').value.trim();
+            const p = document.getElementById('pass').value.trim();
+            db.ref('master/admin').once('value').then((snap) => {
+                const admin = snap.val();
+                if(u.toLowerCase() === admin.user.toLowerCase() && p === admin.pass) {
+                    window.location.href = "index.html";
+                } else {
+                    db.ref('trabajadores/pedro').once('value').then((snapEmp) => {
+                        const emp = snapEmp.val();
+                        if(u.toLowerCase() === emp.user.toLowerCase() && p === emp.pass) {
+                            window.location.href = "trabajadores.html";
+                        } else { alert("DATOS INCORRECTOS"); }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

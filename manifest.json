@@ -1,0 +1,21 @@
+{
+  "name": "MULTISERVICIOS APP",
+  "short_name": "MULTISERVICIOS",
+  "start_url": "login.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#00d4ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/00d4ff/ffffff?text=M",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://via.placeholder.com/512/00d4ff/ffffff?text=MULTISERVICIOS",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MULTISERVICIOS - JEFE</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; text-transform: uppercase; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; }
+        .container { width: 100%; max-width: 400px; background: #1e1e1e; padding: 25px; border-radius: 20px; }
+        h2 { color: #00d4ff; text-align: center; letter-spacing: 2px; }
+        label { display: block; margin-top: 15px; color: #aaa; font-size: 0.8rem; }
+        input, select { width: 100%; padding: 15px; margin-top: 5px; border-radius: 10px; border: none; background: #333; color: white; font-size: 1rem; }
+        button { width: 100%; padding: 18px; margin-top: 25px; border-radius: 10px; border: none; background: #00d4ff; color: #121212; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>PANEL MASTER</h2>
+        <label>TRABAJADOR:</label>
+        <select id="worker"><option value="pedro">PEDRO</option></select>
+        <label>CLIENTE:</label>
+        <input type="text" id="cliente" placeholder="NOMBRE DEL CLIENTE">
+        <label>TAREA:</label>
+        <input type="text" id="tarea" placeholder="DESCRIPCIÓN DEL TRABAJO">
+        <button onclick="enviarOrden()">ENVIAR ORDEN</button>
+    </div>
+    <script>
+        const firebaseConfig = { databaseURL: "https://tokentest-87f09-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function enviarOrden() {
+            const worker = document.getElementById('worker').value;
+            const cli = document.getElementById('cliente').value;
+            const tar = document.getElementById('tarea').value;
+            if(!cli || !tar) return alert("RELLENA TODOS LOS CAMPOS");
+            db.ref('trabajadores/' + worker + '/servicio_actual').set({
+                cliente: cli, tarea: tar, estado: "pendiente", timestamp: Date.now()
+            }).then(() => {
+                alert("ORDEN ENVIADA");
+                document.getElementById('cliente').value = "";
+                document.getElementById('tarea').value = "";
+            });
+        }
+    </script>
+</body>
+</html>

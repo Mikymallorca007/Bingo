@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MULTISERVICIOS - PEDRO</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; text-transform: uppercase; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .status-empty { color: #444; text-align: center; }
+        #task-card { display: none; width: 90%; background: #f1c40f; color: #121212; padding: 30px; border-radius: 25px; text-align: center; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+        h2 { margin-top: 0; font-weight: 900; }
+        .info { font-size: 1.1rem; margin: 15px 0; border-top: 2px solid rgba(0,0,0,0.1); padding-top: 15px; }
+        .btn-finish { width: 100%; padding: 20px; background: #121212; color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="no-task" class="status-empty">
+        <h1 style="font-size: 4rem; margin:0;">😴</h1>
+        <p>SIN TAREAS PENDIENTES</p>
+    </div>
+    <div id="task-card">
+        <h2>NUEVA ORDEN</h2>
+        <div class="info"><strong>CLIENTE:</strong><br><span id="cli-name"></span></div>
+        <div class="info"><strong>TAREA:</strong><br><span id="task-desc"></span></div>
+        <button class="btn-finish" onclick="finalizar()">FINALIZAR TAREA</button>
+    </div>
+    <script>
+        const firebaseConfig = { databaseURL: "https://tokentest-87f09-default-rtdb.europe-west1.firebasedatabase.app" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('trabajadores/pedro/servicio_actual').on('value', (snap) => {
+            const data = snap.val();
+            if (data && data.estado === "pendiente") {
+                document.getElementById('no-task').style.display = "none";
+                document.getElementById('task-card').style.display = "block";
+                document.getElementById('cli-name').innerText = data.cliente;
+                document.getElementById('task-desc').innerText = data.tarea;
+                if (navigator.vibrate) navigator.vibrate([500, 100, 500]);
+            } else {
+                document.getElementById('no-task').style.display = "block";
+                document.getElementById('task-card').style.display = "none";
+            }
+        });
+
+        function finalizar() {
+            if(confirm("¿TRABAJO TERMINADO?")) {
+                db.ref('trabajadores/pedro/servicio_actual').update({ estado: "libre" });
+            }
+        }
+    </script>
+</body>
+</html>
