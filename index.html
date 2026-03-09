@@ -131,24 +131,22 @@
         let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
             
         function iniciarConexionFirebase() {
-            // Escuchamos el ID de la partida global
+            // 1. Escuchar el ID de la partida global para reseteos
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
-                // Si el ID del servidor es distinto al que tenemos, reseteamos TODO
                 if (idServidor && idServidor != idPartidaActual) {
                     console.log("Nueva partida detectada. Reseteando memoria...");
                     localStorage.clear(); 
-                    // Re-guardamos lo básico tras el clear
                     localStorage.setItem('aldea_uid', miId);
                     localStorage.setItem('aldea_nombre', miNombre);
-                    
                     idPartidaActual = idServidor;
                     localStorage.setItem('id_partida_local', idServidor);
                     miMatriz = []; 
-                    location.reload(); // Recargamos para limpiar la interfaz visualmente
+                    location.reload(); 
                 }
             });
-            
+        
+            // 2. Control de acceso y mensaje de "ACEPTADO"
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
@@ -159,17 +157,36 @@
                     document.getElementById('bloqueo').style.display = 'flex';
                     document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><small>Espera a ser aceptado...</small>`;
                 } else if(s.estado === "autorizado") {
-                    document.getElementById('bloqueo').style.display = 'none';
-                    if(miMatriz.length === 0) {
-                        cargarJuego(); 
-                    }
+                    // Mantenemos el bloqueo pero con mensaje de éxito
+                    document.getElementById('bloqueo').style.display = 'flex';
+                    document.getElementById('bloqueo-status').innerHTML = `
+                        <span style="color:var(--win); font-size: 2.5rem;">✔</span><br>
+                        ¡ACCESO CONCEDIDO!<br>
+                        <small style="font-size: 1.2rem; color: #00d2ff;">Esperando a que el Master inicie la partida...</small>
+                    `;
                 }
             });
-
-            // IMPORTANTE: Activar la escucha de bolas y premios
+        
+            // 3. Revelar el cartón solo cuando el estado sea CUENTA_X o JUGANDO
+            db.ref('bingo/estado').on('value', snap => {
+                const estadoBingo = snap.val();
+                
+                if (estadoBingo && (estadoBingo.includes("CUENTA_") || estadoBingo === "JUGANDO")) {
+                    // Verificamos si este usuario específico ya está autorizado antes de mostrar nada
+                    db.ref('bingo/solicitudes/' + miId + '/estado').once('value', stateSnap => {
+                        if (stateSnap.val() === "autorizado") {
+                            document.getElementById('bloqueo').style.display = 'none';
+                            if (miMatriz.length === 0) {
+                                cargarJuego();
+                            }
+                        }
+                    });
+                }
+            });
+        
+            // 4. Activar la escucha de bolas y premios
             escucharBolas();
         }
-
         function cargarJuego() {
             let storage = localStorage.getItem('mi_carton_data');
             if(storage) {
@@ -295,6 +312,7 @@
     </script>
 </body>
 </html>
+
 
 
 
