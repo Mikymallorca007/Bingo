@@ -202,17 +202,77 @@ function procesarEntrada() {
             dibujar(); 
         }
 
-        function generarCarton() {
-            let m = Array.from({length: 4}, () => Array(8).fill(null));
-            for(let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1; let max = (c * 10) + 10;
-                let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
-                let opcionesColumna = [];
-                for(let n = min; n <= max; n++) opcionesColumna.push(n);
-                let elegidos = opcionesColumna.sort(() => Math.random() - 0.5).slice(0, cantidadNumeros);
-                elegidos.sort((a, b) => a - b);
-                let filasDisponibles = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, cantidadNumeros).sort();
-                filasDisponibles.forEach((f, index) => { m[f][c] = elegidos[index]; });
+	function generarCarton() {
+            let m;
+            let esValido = false;
+
+            // Intentamos generar el tablero hasta que cumpla todas las normas
+            while (!esValido) {
+                // 1. Crear matriz de 4 filas x 8 columnas
+                m = Array.from({ length: 4 }, () => Array(8).fill(null));
+
+                // 2. Colocar exactamente 5 números por fila (quedan 3 espacios NULL)
+                for (let f = 0; f < 4; f++) {
+                    // Mezclamos los índices de las 8 columnas y tomamos 5
+                    let indices = [0, 1, 2, 3, 4, 5, 6, 7].sort(() => Math.random() - 0.5);
+                    let seleccionados = indices.slice(0, 5); 
+                    
+                    seleccionados.forEach(c => {
+                        // Rango para Bingo 80 (Col 0: 1-10, Col 1: 11-20... Col 7: 71-80)
+                        let min = (c * 10) + 1;
+                        let max = (c * 10) + 10;
+                        
+                        // Generamos número único para esa columna en esa fila
+                        let num = Math.floor(Math.random() * (max - min + 1)) + min;
+                        
+                        // Evitar que el mismo número aparezca en la misma columna de otra fila
+                        let intentos = 0;
+                        while(m.some(fila => fila[c] === num) && intentos < 10) {
+                            num = Math.floor(Math.random() * (max - min + 1)) + min;
+                            intentos++;
+                        }
+                        m[f][c] = num;
+                    });
+                }
+
+                // 3. VALIDACIÓN DE NORMAS DE ESPACIOS (NULL)
+                esValido = true;
+
+                // Norma A: Máximo 2 espacios NULL juntos por FILA
+                for (let f = 0; f < 4; f++) {
+                    let consecutivosNull = 0;
+                    for (let c = 0; c < 8; c++) {
+                        if (m[f][c] === null) consecutivosNull++;
+                        else consecutivosNull = 0;
+                        
+                        if (consecutivosNull > 2) { esValido = false; break; }
+                    }
+                    if (!esValido) break;
+                }
+
+                if (!esValido) continue;
+
+                // Norma B: Máximo 2 espacios NULL juntos por COLUMNA
+                for (let c = 0; c < 8; c++) {
+                    let consecutivosNull = 0;
+                    for (let f = 0; f < 4; f++) {
+                        if (m[f][c] === null) consecutivosNull++;
+                        else consecutivosNull = 0;
+                        
+                        if (consecutivosNull > 2) { esValido = false; break; }
+                    }
+                    if (!esValido) break;
+                }
+
+                // Norma C: Cada columna debe tener al menos un número
+                if (esValido) {
+                    for (let c = 0; c < 8; c++) {
+                        if (m[0][c] === null && m[1][c] === null && m[2][c] === null && m[3][c] === null) {
+                            esValido = false; 
+                            break;
+                        }
+                    }
+                }
             }
             return m;
         }
