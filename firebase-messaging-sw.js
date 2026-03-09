@@ -13,23 +13,16 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Esto se dispara cuando llega el mensaje con la pantalla apagada
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification.title || "NUEVA ORDEN";
+  const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
     icon: 'https://via.placeholder.com/192/00d4ff/ffffff?text=M',
     vibrate: [500, 200, 500],
-    tag: 'orden-urgente'
+    tag: 'nueva-tarea',
+    data: { url: '/trabajadores.html' }
   };
-  return self.registration.showNotification(notificationTitle, notificationOptions);
-});
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      if (windowClients.length > 0) return windowClients[0].focus();
-      return clients.openWindow('/trabajadores.html');
-    })
-  );
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
