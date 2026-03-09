@@ -103,19 +103,35 @@
         let yaHuboLinea = false;
         let miMatriz = [];
 
-        db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-            const s = snap.val();
-            if(!s) {
-                if(!miNombre) { miNombre = prompt("Dime tu nombre para el cartón:").toUpperCase(); localStorage.setItem('aldea_nombre', miNombre); }
-                db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente" });
-            } else if(s.estado === "pendiente") {
-                document.getElementById('bloqueo').style.display = 'flex';
-                document.getElementById('bloqueo-status').innerHTML = "¡HOLA " + s.nombre + "!<br>Espera a que el Master te autorice.";
-            } else {
-                document.getElementById('bloqueo').style.display = 'none';
-                requestWakeLock();
-                if(miMatriz.length === 0) cargarJuego();
+        db.ref('bingo/solicitudes').on('value', snap => {
+            const list = document.getElementById('lista-espera');
+            const badge = document.getElementById('badge-count');
+            list.innerHTML = ""; 
+            let count = 0;
+            const data = snap.val();
+            
+            if(data) {
+                // Ordenamos por fecha para que el más nuevo salga arriba
+                const uids = Object.keys(data).sort((a,b) => (data[b].fecha || 0) - (data[a].fecha || 0));
+                
+                uids.forEach(uid => {
+                    if(data[uid].estado === "pendiente") {
+                        count++;
+                        let row = document.createElement('div');
+                        row.className = 'user-row';
+                        // Si el nombre ya existe en la lista, le ponemos un aviso visual
+                        row.innerHTML = `
+                            <span>${data[uid].nombre}</span>
+                            <div>
+                                <button class="btn-ok" onclick="admitir('${uid}')">ADMITIR</button>
+                                <button class="btn-kick" onclick="expulsar('${uid}')" style="background:#636e72">BORRAR</button>
+                            </div>`;
+                        list.appendChild(row);
+                    }
+                });
             }
+            badge.innerText = count; 
+            badge.style.display = count > 0 ? "block" : "none";
         });
 
         db.ref('bingo/estado').on('value', snap => {
