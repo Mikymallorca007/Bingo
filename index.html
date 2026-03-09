@@ -23,15 +23,16 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
         }
 
-        #icon-espera { font-size: 8rem; margin-bottom: 20px; }
-        #texto-espera { font-size: 1.8rem; margin-bottom: 20px; }
+        #icon-espera { font-size: 8rem; margin-bottom: 20px; transition: all 0.3s; }
+        #texto-espera { font-size: 1.8rem; margin-bottom: 20px; transition: all 0.3s; }
         
         /* CONTADOR GIGANTE */
         #contador-gigante {
             font-size: 15rem; font-weight: 900; color: #fff;
             text-shadow: 0 0 40px var(--accent);
             -webkit-text-stroke: 3px var(--accent);
-            display: none; /* Se activa por JS */
+            display: none; 
+            line-height: 1;
         }
 
         /* REGISTRO */
@@ -41,14 +42,12 @@
             flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* DISEÑO CARTÓN */
         aside { width: 80px; background: rgba(255,255,255,0.1); border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; flex-direction: column; align-items: center; }
         main { flex-grow: 1; height: 100%; }
         .grid-bingo { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); gap: 5px; width: 100%; height: 100%; }
         .cell { background: white; color: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; }
         .cell.empty { background: rgba(255,255,255,0.05); }
         .cell.marked-ok { background: var(--win) !important; color: white; }
-        .cell.marked-error { background: var(--fail) !important; color: white; }
         
         .input-nombre { background: rgba(255,255,255,0.1); border: 2px solid var(--accent); border-radius: 15px; padding: 15px; color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; outline: none; }
         .btn-entrar { background: var(--win); color: white; border: none; padding: 15px 40px; border-radius: 15px; font-size: 1.2rem; font-weight: bold; }
@@ -65,7 +64,7 @@
 
     <div id="bloqueo-pantalla" style="display:none;">
         <div id="icon-espera">🚫</div>
-        <div id="texto-espera">ESPERANDO ACEPCIÓN...</div>
+        <div id="texto-espera">ESPERANDO ACEPTACIÓN...</div>
         <div id="contador-gigante">--</div>
     </div>
 
@@ -85,6 +84,7 @@
         localStorage.setItem('aldea_uid', miId);
         let miNombre = localStorage.getItem('aldea_nombre');
         let autorizado = false;
+        let segundosGlobal = 0;
         let miMatriz = [];
 
         window.onload = () => { if(miNombre) { document.getElementById('pantalla-registro').style.display='none'; conectar(); } };
@@ -97,43 +97,43 @@
             conectar();
         }
 
-        function conectar() {
+        function refrescarPantalla() {
             const capa = document.getElementById('bloqueo-pantalla');
             const icon = document.getElementById('icon-espera');
             const txt = document.getElementById('texto-espera');
             const cont = document.getElementById('contador-gigante');
-        
-            let segundosGlobal = 0; // Para saber en qué número va la cuenta atrás
-        
-            function refrescarPantalla() {
-                // REGLA 1: Si hay cuenta atrás (> 0), se muestra el número gigante y la capa de bloqueo
-                if (segundosGlobal > 0) {
-                    capa.style.display = 'flex';
-                    cont.style.display = 'block';
-                    cont.innerText = segundosGlobal;
-                    icon.style.opacity = "0.2";
-                    txt.style.opacity = "0.2";
-                    return; // Salimos, no hace falta mirar más
-                }
-        
-                // REGLA 2: Si NO hay cuenta atrás (es 0)...
-                cont.style.display = 'none';
-                icon.style.opacity = "1";
-                txt.style.opacity = "1";
-        
-                if (autorizado) {
-                    // SOLO si el master ha dado a "Empezar" (cuenta atrás llegó a 0)
-                    // y el jugador está aceptado, se quita el bloqueo.
-                    capa.style.display = 'none';
-                } else {
-                    // Si la cuenta es 0 pero NO está autorizado, se queda el candado/prohibido
-                    capa.style.display = 'flex';
-                    icon.innerText = "🚫";
-                    txt.innerText = "ESPERANDO ACEPTACIÓN...";
-                }
+
+            // 1. Prioridad Máxima: Si hay cuenta atrás activa
+            if (segundosGlobal > 0) {
+                capa.style.display = 'flex';
+                cont.style.display = 'block';
+                cont.innerText = segundosGlobal;
+                // Atenuamos el fondo para que destaque el número
+                icon.style.opacity = "0.1";
+                txt.style.opacity = "0.1";
+                return;
             }
-        
-            // Escuchar cambios en la autorización
+
+            // 2. Si la cuenta atrás es 0 o terminó
+            cont.style.display = 'none';
+            icon.style.opacity = "1";
+            txt.style.opacity = "1";
+
+            if (autorizado) {
+                // Solo quitamos la capa si estamos autorizados Y la cuenta atrás es 0
+                capa.style.display = 'none';
+            } else {
+                // Si no hay cuenta atrás pero no estamos autorizados, mostramos prohibido
+                capa.style.display = 'flex';
+                icon.innerText = "🚫";
+                txt.innerText = "ESPERANDO ACEPTACIÓN...";
+            }
+        }
+
+        function conectar() {
+            document.getElementById('bloqueo-pantalla').style.display = 'flex';
+
+            // Escuchar Solicitudes
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
@@ -141,8 +141,8 @@
                 } else {
                     if(s.estado === "autorizado") {
                         autorizado = true;
-                        icon.innerText = "✅";
-                        txt.innerText = "¡ACEPTADO! ESPERA AL MASTER...";
+                        document.getElementById('icon-espera').innerText = "✅";
+                        document.getElementById('texto-espera').innerText = "¡ACEPTADO! ESPERA AL MASTER...";
                         if(miMatriz.length === 0) generarCartonLocal();
                     } else {
                         autorizado = false;
@@ -150,31 +150,25 @@
                     refrescarPantalla();
                 }
             });
-        
-            // Escuchar cambios en la cuenta atrás
+
+            // Escuchar Cuenta Atrás
             db.ref('bingo/cuentaAtras').on('value', snap => {
-                segundosGlobal = snap.val() || 0;
+                segundosGlobal = parseInt(snap.val()) || 0;
                 refrescarPantalla();
             });
-        
+
             escucharBolas();
         }
-   
-        
-        
+
         function generarCartonLocal() {
-            // Lógica simplificada de generación (Regla de adyacencia incluida)
             let matriz = Array.from({length: 4}, () => Array(8).fill(true));
             for (let f = 0; f < 4; f++) {
                 let h = 0;
                 while (h < 3) {
                     let c = Math.floor(Math.random() * 8);
-                    if (matriz[f][c] === true) {
-                        matriz[f][c] = null; h++;
-                    }
+                    if (matriz[f][c] === true) { matriz[f][c] = null; h++; }
                 }
             }
-            // Rellenar números
             for (let c = 0; c < 8; c++) {
                 let nums = []; for(let i=1; i<=10; i++) nums.push((c*10)+i);
                 nums.sort(() => Math.random() - 0.5);
@@ -211,12 +205,10 @@
             db.ref('bingo/idPartida').on('value', snap => {
                 if(snap.val() && snap.val() != localStorage.getItem('id_p')) {
                     localStorage.setItem('id_p', snap.val());
-                    window.location.reload();
+                    window.location.reload(true);
                 }
             });
         }
     </script>
 </body>
 </html>
-
-
