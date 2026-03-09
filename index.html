@@ -129,10 +129,14 @@
             if(val.length < 2) { alert("Nombre demasiado corto"); return; }
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
+            
+            // ESTO FUERZA LA PANTALLA COMPLETA AL HACER CLIC
+            const doc = document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+            else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
+        
             document.getElementById('pantalla-registro').style.display = 'none';
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
             iniciarConexionFirebase();
         }
 
@@ -374,3 +378,4 @@
     </script>
 </body>
 </html>
+
