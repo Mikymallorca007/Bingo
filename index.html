@@ -44,6 +44,7 @@
         const db = firebase.database();
 
         // AQUÍ PEGA TU SERVER KEY (API HEREDADA) DE FIREBASE CONSOLE
+        // Formato: AAAA... (Es una cadena muy larga)
         const SERVER_KEY = "TU_SERVER_KEY_AQUI";
 
         function enviarOrden() {
@@ -53,24 +54,34 @@
 
             if(!cli || !tar) return alert("¡ERROR! RELLENA TODOS LOS DATOS");
 
+            // 1. Guardar en la base de datos para que aparezca en la pantalla de Pedro si está abierta
             db.ref('trabajadores/' + worker + '/servicio_actual').set({
                 cliente: cli,
                 tarea: tar,
                 estado: "pendiente",
                 timestamp: Date.now()
             }).then(() => {
+                // 2. Disparar la notificación PUSH para móviles bloqueados/cerrados
                 notificarPush(worker, cli, tar);
                 alert("ORDEN ENVIADA CORRECTAMENTE");
                 document.getElementById('cliente').value = "";
                 document.getElementById('tarea').value = "";
-            }).catch(e => alert("ERROR DE CONEXIÓN"));
+            }).catch(e => {
+                console.error(e);
+                alert("ERROR DE CONEXIÓN AL ENVIAR");
+            });
         }
 
         function notificarPush(worker, cli, tar) {
+            // Buscamos el token que Pedro registró al pulsar "Activar Sistema"
             db.ref('trabajadores/' + worker + '/token').once('value').then((snap) => {
                 const token = snap.val();
-                if (!token) return console.log("El trabajador no tiene el sistema activo.");
+                if (!token) {
+                    console.warn("El trabajador no tiene un token registrado. No recibirá notificación Push.");
+                    return;
+                }
 
+                // Llamada a la API de Firebase Cloud Messaging
                 fetch('https://fcm.googleapis.com/fcm/send', {
                     method: 'POST',
                     headers: {
@@ -79,14 +90,19 @@
                     },
                     body: JSON.stringify({
                         to: token,
+                        priority: "high",
                         notification: {
                             title: "⚠️ NUEVA TAREA: " + cli,
                             body: tar,
                             icon: "https://via.placeholder.com/192/00d4ff/ffffff?text=M",
-                            click_action: "https://TU_DOMINIO.com/trabajadores.html"
+                            click_action: window.location.origin + "/trabajadores.html",
+                            sound: "default"
                         }
                     })
-                });
+                })
+                .then(response => response.json())
+                .then(data => console.log("Resultado Push:", data))
+                .catch(error => console.error("Error enviando Push:", error));
             });
         }
     </script>
