@@ -19,39 +19,44 @@
         
         #pantalla-registro {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #0f0c29; z-index: 10000; display: flex; 
+            background: #0f0c29; z-index: 20000; display: flex; 
             flex-direction: column; align-items: center; justify-content: center;
         }
-        .input-nombre {
-            background: rgba(255,255,255,0.1); border: 2px solid var(--accent);
-            border-radius: 15px; padding: 15px; color: white; font-size: 1.5rem;
-            text-align: center; width: 80%; max-width: 400px; margin-bottom: 20px; outline: none;
-        }
-        .btn-entrar {
-            background: var(--win); color: white; border: none; padding: 15px 40px;
-            border-radius: 15px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+
+        /* PANTALLA DE BLOQUEO / ESPERA / CUENTA ATRÁS */
+        #bloqueo { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: #0f0c29; z-index: 15000; 
+            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
         }
 
+        .icon-status { font-size: 8rem; margin-bottom: 20px; transition: all 0.5s ease; }
+        .espera-prohibido { color: var(--fail); }
+        .espera-check { color: var(--win); transform: scale(1.2); }
+
+        #contador-bloqueo {
+            font-size: 15rem; font-weight: 900; color: white;
+            text-shadow: 0 0 30px var(--accent);
+            display: none;
+            -webkit-text-stroke: 3px var(--accent);
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+        /* INTERFAZ DEL JUEGO */
         aside { 
             width: 20vw; max-width: 100px; background: rgba(255, 255, 255, 0.1); 
             border-radius: 15px; margin-right: 8px; padding: 10px 5px; display: flex; 
             flex-direction: column; align-items: center; backdrop-filter: blur(5px); flex-shrink: 0;
         }
-        .bola-cantada { 
-            background: white; color: #1e272e; width: 65px; height: 65px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; 
-            font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; 
-        }
-        .historial { 
-            background: rgba(0,0,0,0.3); width: 38px; height: 38px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold;
-        }
 
         main { flex-grow: 1; height: 100%; overflow: hidden; position: relative; }
         .grid-bingo { 
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
-            gap: 5px; width: 100%; height: 100%; transition: opacity 0.3s;
+            gap: 5px; width: 100%; height: 100%; 
         }
+        
         .cell { 
             background: white; color: #2c3e50; display: flex; align-items: center; 
             justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
@@ -61,40 +66,25 @@
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
-        /* CUENTA ATRÁS GIGANTE */
-        #contador-pantalla {
-            position: fixed; /* Fixed para que ignore contenedores */
-            top: 50%; left: 60%; /* Ajustado un poco a la derecha por el aside */
-            transform: translate(-50%, -50%);
-            font-size: 25rem; /* ¡Gigante! */
-            font-weight: 900; 
-            color: white;
-            text-shadow: 0 0 50px rgba(0, 210, 255, 0.9);
-            z-index: 20000; /* Por encima de la pantalla de registro y todo */
-            display: none;
-            pointer-events: none;
-            -webkit-text-stroke: 5px var(--accent);
-        }
-
-        #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f0c29; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
-        #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
+        .input-nombre { background: rgba(255,255,255,0.1); border: 2px solid var(--accent); border-radius: 15px; padding: 15px; color: white; font-size: 1.5rem; text-align: center; width: 80%; max-width: 400px; margin-bottom: 20px; outline: none; }
+        .btn-entrar { background: var(--win); color: white; border: none; padding: 15px 40px; border-radius: 15px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .bola-cantada { background: white; color: #1e272e; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 900; border: 4px solid var(--win); margin-bottom: 10px; }
+        .historial { background: rgba(0,0,0,0.3); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div id="contador-pantalla">--</div>
 
     <div id="pantalla-registro">
         <h1 style="color:var(--accent); margin-bottom:30px;">BINGO ALDEA BELLA</h1>
         <input type="text" id="input-nombre" class="input-nombre" placeholder="TU NOMBRE AQUÍ..." maxlength="12">
         <button class="btn-entrar" onclick="procesarEntrada()">ENTRAR A JUGAR</button>
-        <button id="btn-instalar-jugador" onclick="instalarPWA()">INSTALAR APP</button>
+        <button id="btn-instalar-jugador" style="display:none; margin-top: 20px;" onclick="instalarPWA()">INSTALAR APP</button>
     </div>
 
     <div id="bloqueo">
-        <div class="status-box">
-            <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0; padding: 20px; color: white;">CONECTANDO AL BINGO...</h1>
-        </div>
+        <div id="icon-container" class="icon-status">🚫</div>
+        <h1 id="bloqueo-status" style="font-size: 2rem; color: white; margin: 10px 0;">ESPERANDO...</h1>
+        <div id="contador-bloqueo">--</div>
     </div>
 
     <aside>
@@ -121,6 +111,7 @@
         let yaHuboLinea = false;
         let miMatriz = [];
         let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
+        let estadoAutorizacion = "pendiente";
 
         window.onload = () => {
             if(miNombre) {
@@ -140,6 +131,65 @@
         }
 
         function iniciarConexionFirebase() {
+            // 1. Escuchar Solicitud de Acceso
+            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                const s = snap.val();
+                const b = document.getElementById('bloqueo');
+                const icon = document.getElementById('icon-container');
+                const statusTxt = document.getElementById('bloqueo-status');
+
+                if(!s) {
+                    db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente", fecha: Date.now() });
+                } else {
+                    b.style.display = 'flex';
+                    estadoAutorizacion = s.estado;
+
+                    if(s.estado === "pendiente") {
+                        icon.innerText = "🚫";
+                        icon.className = "icon-status espera-prohibido";
+                        statusTxt.innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#aaa;">Espera a que te acepten...</span>`;
+                    } else if(s.estado === "autorizado") {
+                        icon.innerText = "✅";
+                        icon.className = "icon-status espera-check";
+                        statusTxt.innerHTML = `¡ACEPTADO!<br><span style="font-size:1.2rem; color:#aaa;">La partida empezará pronto...</span>`;
+                        if(miMatriz.length === 0) cargarJuego(); 
+                    }
+                }
+            });
+
+            // 2. Escuchar Cuenta Atrás (Sobre la misma pantalla de bloqueo)
+            db.ref('bingo/cuentaAtras').on('value', snap => {
+                const seg = snap.val();
+                const divCont = document.getElementById('contador-bloqueo');
+                const icon = document.getElementById('icon-container');
+                const statusTxt = document.getElementById('bloqueo-status');
+                const b = document.getElementById('bloqueo');
+
+                if (seg > 0) {
+                    // Ocultamos el icono y el texto para dejar paso al número gigante
+                    icon.style.display = 'none';
+                    statusTxt.style.display = 'none';
+                    divCont.style.display = 'block';
+                    divCont.innerText = seg;
+                    b.style.display = 'flex'; // Aseguramos que el bloqueo esté visible
+                } else {
+                    divCont.style.display = 'none';
+                    // Si ya estamos autorizados y el contador es 0, ocultamos el bloqueo para jugar
+                    if(estadoAutorizacion === "autorizado") {
+                        b.style.display = 'none';
+                    } else {
+                        // Si no está autorizado, volvemos a mostrar el icono de espera
+                        icon.style.display = 'block';
+                        statusTxt.style.display = 'block';
+                    }
+                }
+            });
+
+            // Resto de oyentes (bolas, idPartida...)
+            escucharGeneral();
+        }
+
+        function escucharGeneral() {
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
                 if (idServidor && idServidor != idPartidaActual) {
@@ -150,36 +200,6 @@
                     window.location.reload(true); 
                 }
             });
-            
-            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                const s = snap.val();
-                if(!s) {
-                    db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente", fecha: Date.now() });
-                } else if(s.estado === "pendiente") {
-                    document.getElementById('bloqueo').style.display = 'flex';
-                    document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#ccc;">Espera a que el Master te autorice.</span>`;
-                } else if(s.estado === "autorizado") {
-                    document.getElementById('bloqueo').style.display = 'none';
-                    if(document.getElementById('bingo-grid').children.length === 0) {
-                        cargarJuego(); 
-                    }
-                }
-            });
-
-            // ESCUCHA DEL CONTADOR - SIEMPRE PRIORITARIO
-            db.ref('bingo/cuentaAtras').on('value', snap => {
-                const seg = snap.val();
-                const divContador = document.getElementById('contador-pantalla');
-                if (seg > 0) {
-                    divContador.innerText = seg;
-                    divContador.style.display = 'block';
-                    document.getElementById('bingo-grid').style.opacity = '0.1';
-                } else {
-                    divContador.style.display = 'none';
-                    document.getElementById('bingo-grid').style.opacity = '1';
-                }
-            });
-
             escucharBolas();
         }
 
@@ -203,35 +223,25 @@
                     intentos++;
                     let c = Math.floor(Math.random() * 8);
                     if (matriz[f][c] === true) {
-                        // REGLA HUECOS: No más de 2 juntos horizontalmente
                         if (c > 1 && matriz[f][c-1] === null && matriz[f][c-2] === null) continue;
                         if (c < 6 && matriz[f][c+1] === null && matriz[f][c+2] === null) continue;
-                        // REGLA HUECOS: No más de 2 juntos verticalmente
                         if (f > 1 && matriz[f-1][c] === null && matriz[f-2][c] === null) continue;
                         if (f < 2 && matriz[f+1][c] === null && matriz[f+2][c] === null) continue;
-
-                        matriz[f][c] = null; 
-                        huecosEnFila++;
+                        matriz[f][c] = null; huecosEnFila++;
                     }
                 }
                 if (huecosEnFila < 3) return generarCarton();
             }
-
             for (let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1;
-                let max = (c * 10) + 10;
+                let min = (c * 10) + 1; let max = (c * 10) + 10;
                 let numerosCol = [];
                 for (let i = min; i <= max; i++) numerosCol.push(i);
                 numerosCol.sort(() => Math.random() - 0.5);
                 let vals = [];
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === true) vals.push(numerosCol.pop());
-                }
+                for (let f = 0; f < 4; f++) if (matriz[f][c] === true) vals.push(numerosCol.pop());
                 vals.sort((a, b) => a - b);
                 let vIdx = 0;
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === true) matriz[f][c] = vals[vIdx++];
-                }
+                for (let f = 0; f < 4; f++) if (matriz[f][c] === true) matriz[f][c] = vals[vIdx++];
             }
             return matriz;
         }
@@ -274,9 +284,8 @@
                 if(n && n !== 0) {
                     bolasEnJuego.add(n);
                     const v = document.getElementById('bola-viva').innerText;
-                    const h1 = document.getElementById('h-1').innerText;
                     if(n.toString() !== v) {
-                        document.getElementById('h-2').innerText = h1;
+                        document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
                         document.getElementById('h-1').innerText = v;
                         document.getElementById('bola-viva').innerText = n;
                         document.querySelectorAll('.marked-error').forEach(c => {
@@ -294,23 +303,19 @@
             let totalNumerosEnCarton = 0;
             miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
-                if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
                 db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
-                    let ok = 0; let numEnFila = 0;
-                    let numerosLinea = []; 
+                    let ok = 0; let numEnFila = 0; let numerosLinea = [];
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
-                            numEnFila++;
-                            numerosLinea.push(miMatriz[f][c]);
+                            numEnFila++; numerosLinea.push(miMatriz[f][c]);
                             const el = document.getElementById(`c-${f}-${c}`);
                             if(el && el.classList.contains('marked-ok')) ok++;
                         }
                     }
                     if(ok === numEnFila && numEnFila > 0) {
-                        if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
                         db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "LINEA", numeros: numerosLinea.join(", ") });
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
@@ -322,8 +327,7 @@
         let promptInstalacion;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); promptInstalacion = e;
-            const btn = document.getElementById('btn-instalar-jugador');
-            if(btn) btn.style.display = 'block';
+            document.getElementById('btn-instalar-jugador').style.display = 'block';
         });
         async function instalarPWA() {
             if (promptInstalacion) {
