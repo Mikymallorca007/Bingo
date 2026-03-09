@@ -127,46 +127,36 @@
         }
 
 
+            let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
+            
             function iniciarConexionFirebase() {
+                // Escuchamos el ID de la partida global
+                db.ref('bingo/idPartida').on('value', snap => {
+                    const idServidor = snap.val();
+                    // Si el ID del servidor es distinto al que tenemos, reseteamos TODO
+                    if (idServidor && idServidor != idPartidaActual) {
+                        console.log("Nueva partida detectada. Reseteando memoria...");
+                        localStorage.clear(); // Borra cartones y marcas antiguas
+                        idPartidaActual = idServidor;
+                        localStorage.setItem('id_partida_local', idServidor);
+                        miMatriz = []; // Forzamos regeneración
+                    }
+                });
+            
                 db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                     const s = snap.val();
-                    
                     if(!s) {
-                        // Si no existe el registro, lo creamos como pendiente
                         db.ref('bingo/solicitudes/' + miId).set({ 
-                            nombre: miNombre, 
-                            estado: "pendiente",
-                            fecha: Date.now() 
+                            nombre: miNombre, estado: "pendiente", fecha: Date.now() 
                         });
                     } else if(s.estado === "pendiente") {
-                        // IMPORTANTE: Si estamos pendientes, BORRAMOS todo rastro anterior
-                        console.log("Limpiando datos antiguos...");
-                        localStorage.removeItem('mi_carton_data');
-                        // Borramos también las marcas guardadas (c-0-0, c-0-1...)
-                        for(let f=0; f<4; f++) {
-                            for(let c=0; c<8; c++) {
-                                localStorage.removeItem(`m_${f}_${c}`);
-                            }
-                        }
-                        miMatriz = []; 
                         document.getElementById('bloqueo').style.display = 'flex';
-                        document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
+                        document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><small>Espera a ser aceptado...</small>`;
                     } else if(s.estado === "autorizado") {
                         document.getElementById('bloqueo').style.display = 'none';
-                        
-                        // Si el Master nos autorizó y no tenemos matriz cargada en esta sesión:
+                        // Si después del reset automático no hay matriz, la creamos
                         if(miMatriz.length === 0) {
-                            // Miramos si hay algo en localStorage
-                            let saved = localStorage.getItem('mi_carton_data');
-                            if(saved) {
-                                // Si hay algo guardado pero queremos empezar de cero, 
-                                // aquí es donde decidimos:
-                                // Para asegurar limpieza TOTAL cada vez que el Master acepta:
-                                // cargarJuego(true); // El 'true' forzaría reset
-                                cargarJuego(); 
-                            } else {
-                                cargarJuego();
-                            }
+                            cargarJuego(); 
                         }
                     }
                 });
@@ -324,6 +314,7 @@
     </script>
 </body>
 </html>
+
 
 
 
