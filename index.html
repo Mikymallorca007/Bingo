@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Bar App</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        h1 { color: #1a73e8; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 10px; 
+            max-width: 400px; 
+            margin: 20px auto; 
+        }
+        .cell { 
+            background: white; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            aspect-ratio: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .cell.marked { background: #ff4757; color: white; border-color: #ff4757; transform: scale(0.95); }
+        button { padding: 10px 20px; font-size: 1rem; cursor: pointer; border-radius: 5px; border: none; background: #2ed573; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>🍻 Bingo del Bar</h1>
+    <p>Toca los números que vayan saliendo</p>
+    
+    <div class="grid" id="bingo-card">
+        </div>
+
+    <button onclick="window.location.reload()">Nuevo Cartón</button>
+
+    <script>
+        const cardContainer = document.getElementById('bingo-card');
+        let numbers = [];
+
+        // Generar 15 números aleatorios únicos del 1 al 90
+        while(numbers.length < 15) {
+            let r = Math.floor(Math.random() * 90) + 1;
+            if(numbers.indexOf(r) === -1) numbers.push(r);
+        }
+        
+        // Ordenarlos para que el cartón se vea organizado
+        numbers.sort((a, b) => a - b);
+
+        // Crear las celdas en el HTML
+        numbers.forEach(num => {
+            let div = document.createElement('div');
+            div.className = 'cell';
+            div.innerText = num;
+            div.onclick = function() { this.classList.toggle('marked'); };
+            cardContainer.appendChild(div);
+        });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+
+
+    </script>
+</body>
+</html>
