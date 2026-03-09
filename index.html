@@ -17,6 +17,7 @@
             color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; 
         }
         
+        /* PANTALLA DE REGISTRO INTEGRADA */
         #pantalla-registro {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f0c29; z-index: 10000; display: flex; 
@@ -61,6 +62,7 @@
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
+        /* ESTILO PARA LA CUENTA ATRÁS EN EL JUGADOR */
         #contador-pantalla {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 12rem; font-weight: 900; color: var(--accent);
@@ -126,7 +128,9 @@
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
             document.getElementById('pantalla-registro').style.display = 'none';
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
             iniciarConexionFirebase();
         }
 
@@ -145,7 +149,9 @@
             db.ref('bingo/solicitudes/' + miId).on('value', snap => {
                 const s = snap.val();
                 if(!s) {
-                    db.ref('bingo/solicitudes/' + miId).set({ nombre: miNombre, estado: "pendiente", fecha: Date.now() });
+                    db.ref('bingo/solicitudes/' + miId).set({ 
+                        nombre: miNombre, estado: "pendiente", fecha: Date.now() 
+                    });
                 } else if(s.estado === "pendiente") {
                     document.getElementById('bloqueo').style.display = 'flex';
                     document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#ccc;">Espera a que el Master te autorice.</span>`;
@@ -185,34 +191,31 @@
         }
 
         function generarCarton() {
-            // Inicializamos todo como "Número" (true) y luego quitaremos 3 por fila
-            let matriz = Array.from({length: 4}, () => Array(8).fill(true));
+            let matriz = Array.from({length: 4}, () => Array(8).fill(null));
             
             for (let f = 0; f < 4; f++) {
-                let huecosEnFila = 0;
-                let intentos = 0;
-                while (huecosEnFila < 3 && intentos < 100) {
-                    intentos++;
+                let celdasOcupadas = 0;
+                let intentosFila = 0;
+                while (celdasOcupadas < 5 && intentosFila < 100) {
+                    intentosFila++;
                     let c = Math.floor(Math.random() * 8);
-                    
-                    if (matriz[f][c] === true) {
-                        // REGLA HUECOS: No más de 2 HUECOS (null) juntos horizontalmente
-                        if (c > 1 && matriz[f][c-1] === null && matriz[f][c-2] === null) continue;
-                        if (c < 6 && (matriz[f][c+1] === null && matriz[f][c+2] === null)) continue;
-                        if (c > 0 && c < 7 && matriz[f][c-1] === null && matriz[f][c+1] === null) continue;
+                    if (matriz[f][c] === null) {
+                        // REGLA HORIZONTAL: No más de 2 juntos
+                        if (c > 1 && matriz[f][c-1] !== null && matriz[f][c-2] !== null) continue;
+                        if (c < 6 && matriz[f][c+1] !== null && matriz[f][c+2] !== null) continue;
+                        
+                        // REGLA VERTICAL: No más de 2 juntos
+                        if (f > 1 && matriz[f-1][c] !== null && matriz[f-2][c] !== null) continue;
+                        if (f < 2 && matriz[f+1][c] !== null && matriz[f+2][c] !== null) continue;
 
-                        // REGLA HUECOS: No más de 2 HUECOS (null) juntos verticalmente
-                        if (f > 1 && matriz[f-1][c] === null && matriz[f-2][c] === null) continue;
-                        if (f < 2 && matriz[f+1][c] === null && matriz[f+2][c] === null) continue;
-
-                        matriz[f][c] = null; 
-                        huecosEnFila++;
+                        matriz[f][c] = true; 
+                        celdasOcupadas++;
                     }
                 }
-                if (huecosEnFila < 3) return generarCarton(); // Reintentar si falla el azar
+                // Si por azar no se logran 5, reiniciamos la generación completa
+                if (celdasOcupadas < 5) return generarCarton();
             }
 
-            // Rellenar los huecos marcados como 'true' con números reales
             for (let c = 0; c < 8; c++) {
                 let min = (c * 10) + 1;
                 let max = (c * 10) + 10;
@@ -277,7 +280,9 @@
                         document.getElementById('h-1').innerText = v;
                         document.getElementById('bola-viva').innerText = n;
                         document.querySelectorAll('.marked-error').forEach(c => {
-                            if(bolasEnJuego.has(parseInt(c.innerText))) c.classList.replace('marked-error', 'marked-ok'); 
+                            if(bolasEnJuego.has(parseInt(c.innerText))) { 
+                                c.classList.replace('marked-error', 'marked-ok'); 
+                            }
                         });
                         verificarPremios();
                     }
@@ -310,7 +315,11 @@
                     }
                     if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-                        db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "LINEA", numeros: numerosLinea.join(", ") });
+                        db.ref('bingo/avisoPremio').set({ 
+                            nombre: miNombre, 
+                            tipo: "LINEA",
+                            numeros: numerosLinea.join(", ") 
+                        });
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
                     }
