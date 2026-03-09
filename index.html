@@ -126,34 +126,51 @@
             iniciarConexionFirebase();
         }
 
+
             function iniciarConexionFirebase() {
-                    db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                        const s = snap.val();
-                        if(!s) {
-                            db.ref('bingo/solicitudes/' + miId).set({ 
-                                nombre: miNombre, 
-                                estado: "pendiente",
-                                fecha: Date.now() 
-                            });
-                        } else if(s.estado === "pendiente") {
-                            // Si el Master nos pone en pendiente (o acabamos de entrar), 
-                            // limpiamos datos de partidas viejas para estar listos
-                            localStorage.removeItem('mi_carton_data');
-                            for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
-                            miMatriz = []; 
-                            
-                            document.getElementById('bloqueo').style.display = 'flex';
-                            document.getElementById('bloqueo-status').innerHTML = `¡HOLA ${s.nombre}!<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
-                        } else if(s.estado === "autorizado") {
-                            document.getElementById('bloqueo').style.display = 'none';
-                            // Si no tenemos matriz (porque acabamos de ser aceptados), la generamos
-                            if(miMatriz.length === 0) {
-                                console.log("¡Autorizado! Generando nuevo cartón...");
-                                cargarJuego(); 
+                db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                    const s = snap.val();
+                    
+                    if(!s) {
+                        // Si no existe el registro, lo creamos como pendiente
+                        db.ref('bingo/solicitudes/' + miId).set({ 
+                            nombre: miNombre, 
+                            estado: "pendiente",
+                            fecha: Date.now() 
+                        });
+                    } else if(s.estado === "pendiente") {
+                        // IMPORTANTE: Si estamos pendientes, BORRAMOS todo rastro anterior
+                        console.log("Limpiando datos antiguos...");
+                        localStorage.removeItem('mi_carton_data');
+                        // Borramos también las marcas guardadas (c-0-0, c-0-1...)
+                        for(let f=0; f<4; f++) {
+                            for(let c=0; c<8; c++) {
+                                localStorage.removeItem(`m_${f}_${c}`);
                             }
                         }
-                    });
-                }
+                        miMatriz = []; 
+                        document.getElementById('bloqueo').style.display = 'flex';
+                        document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
+                    } else if(s.estado === "autorizado") {
+                        document.getElementById('bloqueo').style.display = 'none';
+                        
+                        // Si el Master nos autorizó y no tenemos matriz cargada en esta sesión:
+                        if(miMatriz.length === 0) {
+                            // Miramos si hay algo en localStorage
+                            let saved = localStorage.getItem('mi_carton_data');
+                            if(saved) {
+                                // Si hay algo guardado pero queremos empezar de cero, 
+                                // aquí es donde decidimos:
+                                // Para asegurar limpieza TOTAL cada vez que el Master acepta:
+                                // cargarJuego(true); // El 'true' forzaría reset
+                                cargarJuego(); 
+                            } else {
+                                cargarJuego();
+                            }
+                        }
+                    }
+                });
+            }
 
 
         db.ref('bingo/estado').on('value', snap => {
@@ -299,5 +316,6 @@
     </script>
 </body>
 </html>
+
 
 
