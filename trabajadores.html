@@ -3,88 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MULTISERVICIOS - EMPLEADO</title>
+    <title>MULTISERVICIOS - PEDRO</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; text-transform: uppercase; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; background: #121212; color: white; 
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        header { background: #1e1e1e; padding: 15px; text-align: center; border-bottom: 2px solid #00d4ff; }
+        header h1 { margin: 0; font-size: 1rem; color: #00d4ff; }
 
-        /* Cabecera con nombre */
-        header {
-            background: #1e1e1e; padding: 20px; text-align: center;
-            border-bottom: 2px solid #00d4ff; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        header h1 { margin: 0; font-size: 1.2rem; color: #00d4ff; letter-spacing: 2px; }
-        #reloj { font-size: 0.8rem; color: #888; margin-top: 5px; }
-
-        /* Contenido Principal */
         main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
 
-        /* Estado Libre */
-        .status-free { text-align: center; color: #444; }
-        .status-free .icon { font-size: 5rem; margin-bottom: 10px; opacity: 0.3; }
-        .status-free p { font-weight: bold; letter-spacing: 1px; }
+        /* Botón de Activación Inicial */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100;
+        }
+        #btn-start { padding: 20px 40px; background: #00d4ff; border: none; border-radius: 50px; font-weight: 900; font-size: 1.2rem; cursor: pointer; }
 
-        /* Tarjeta de Tarea ACTIVA */
+        /* Estado Libre */
+        .status-free { text-align: center; opacity: 0.4; }
+        .status-free h1 { font-size: 4rem; margin: 0; }
+
+        /* Tarjeta de Tarea */
         #task-card { 
             display: none; width: 100%; max-width: 400px; 
-            background: #f1c40f; color: #121212; 
-            padding: 30px; border-radius: 30px; text-align: center;
-            box-shadow: 0 0 30px rgba(241, 196, 15, 0.4);
-            animation: bounce 2s infinite;
+            background: #f1c40f; color: #121212; padding: 30px; border-radius: 30px; 
+            text-align: center; animation: pulse 1s infinite;
         }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0px #f1c40f; } 50% { box-shadow: 0 0 30px #f1c40f; } 100% { box-shadow: 0 0 0px #f1c40f; } }
 
-        h2 { margin: 0 0 15px 0; font-size: 2rem; font-weight: 900; border-bottom: 2px solid rgba(0,0,0,0.1); padding-bottom: 10px; }
-        .detail { margin: 20px 0; text-align: left; }
-        .detail label { font-size: 0.7rem; font-weight: 900; color: rgba(0,0,0,0.5); display: block; }
-        .detail span { font-size: 1.3rem; font-weight: 700; display: block; line-height: 1.2; }
+        .detail { margin: 20px 0; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 10px; }
+        .detail label { font-size: 0.7rem; font-weight: 900; opacity: 0.6; }
+        .detail span { font-size: 1.4rem; font-weight: 800; display: block; }
 
-        /* Botón de Finalizar */
-        .btn-done { 
-            width: 100%; padding: 20px; background: #121212; color: white; 
-            border: none; border-radius: 20px; font-size: 1.2rem; font-weight: 900; 
-            margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
+        .btn-done { width: 100%; padding: 20px; background: #121212; color: white; border: none; border-radius: 20px; font-size: 1.2rem; font-weight: 900; margin-top: 15px; }
     </style>
 </head>
 <body>
 
+    <div id="overlay">
+        <p>PARA RECIBIR AVISOS SONOROS:</p>
+        <button id="btn-start" onclick="activarAudio()">ACTIVAR SISTEMA</button>
+    </div>
+
     <header>
-        <h1 id="user-display">TRABAJADOR: PEDRO</h1>
-        <div id="reloj">00:00:00</div>
+        <h1>TRABAJADOR: PEDRO</h1>
     </header>
 
     <main>
         <div id="no-task" class="status-free">
-            <div class="icon">🛰️</div>
-            <p>SISTEMA CONECTADO</p>
-            <p style="font-size: 0.7rem; color: #00d4ff;">ESPERANDO NUEVAS ÓRDENES...</p>
+            <h1>🛰️</h1>
+            <p>SISTEMA ESCUCHANDO...</p>
         </div>
 
         <div id="task-card">
-            <h2>NUEVA ORDEN</h2>
-            
+            <h2 style="margin:0">⚠️ NUEVA ORDEN</h2>
             <div class="detail">
                 <label>CLIENTE</label>
-                <span id="cli-name">CARGANDO...</span>
+                <span id="cli-name"></span>
             </div>
-
             <div class="detail">
-                <label>TRABAJO A REALIZAR</label>
-                <span id="task-desc">CARGANDO...</span>
+                <label>TAREA</label>
+                <span id="task-desc"></span>
             </div>
-
-            <button class="btn-done" onclick="finalizar()">TRABAJO TERMINADO</button>
+            <button class="btn-done" onclick="finalizar()">FINALIZAR TRABAJO</button>
         </div>
     </main>
 
@@ -93,38 +78,52 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // RELOJ EN TIEMPO REAL
-        setInterval(() => {
-            const ahora = new Date();
-            document.getElementById('reloj').innerText = ahora.toLocaleTimeString();
-        }, 1000);
+        let audioContext;
 
-        // ESCUCHAR TAREAS DE PEDRO
+        // Función para permitir el audio al inicio
+        function activarAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('overlay').style.display = 'none';
+            // Sonido de confirmación corto
+            reproducirPitido(440, 0.1); 
+        }
+
+        // Función que crea un pitido electrónico (sin archivos externos)
+        function reproducirPitido(frecuencia = 880, duracion = 0.5) {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = frecuencia;
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            osc.start();
+            osc.stop(audioContext.currentTime + duracion);
+        }
+
+        // Escuchar Firebase
         db.ref('trabajadores/pedro/servicio_actual').on('value', (snap) => {
             const data = snap.val();
-            const card = document.getElementById('task-card');
-            const empty = document.getElementById('no-task');
-
             if (data && data.estado === "pendiente") {
-                empty.style.display = "none";
-                card.style.display = "block";
+                document.getElementById('no-task').style.display = "none";
+                document.getElementById('task-card').style.display = "block";
                 document.getElementById('cli-name').innerText = data.cliente;
                 document.getElementById('task-desc').innerText = data.tarea;
                 
-                // AVISO VISUAL Y VIBRACIÓN
-                if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+                // --- LANZAR AVISOS ---
+                reproducirPitido(660, 0.3); // Sonido 1
+                setTimeout(() => reproducirPitido(880, 0.4), 300); // Sonido 2
+                
+                if (navigator.vibrate) navigator.vibrate([500, 110, 500]);
             } else {
-                empty.style.display = "block";
-                card.style.display = "none";
+                document.getElementById('no-task').style.display = "block";
+                document.getElementById('task-card').style.display = "none";
             }
         });
 
         function finalizar() {
-            if(confirm("¿CONFIRMAS QUE HAS TERMINADO?")) {
-                db.ref('trabajadores/pedro/servicio_actual').update({ 
-                    estado: "finalizado",
-                    fin_timestamp: Date.now()
-                });
+            if(confirm("¿CONFIRMAS FINALIZACIÓN?")) {
+                db.ref('trabajadores/pedro/servicio_actual').update({ estado: "libre" });
             }
         }
     </script>
