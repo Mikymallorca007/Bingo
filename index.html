@@ -48,7 +48,7 @@
             display: flex; align-items: center; justify-content: center; margin-top: 5px; color: #aaa; font-weight: bold;
         }
 
-        main { flex-grow: 1; height: 100%; overflow: hidden; position: relative; }
+        main { flex-grow: 1; height: 100%; overflow: hidden; }
         .grid-bingo { 
             display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(4, 1fr); 
             gap: 5px; width: 100%; height: 100%; 
@@ -58,17 +58,9 @@
             justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
             box-shadow: 0 4px 0 #bdc3c7; 
         }
-        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
+        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
-
-        /* ESTILO PARA LA CUENTA ATRÁS EN EL JUGADOR */
-        #contador-pantalla {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 12rem; font-weight: 900; color: var(--accent);
-            text-shadow: 0 0 30px rgba(0, 210, 255, 0.5); z-index: 50; display: none;
-            pointer-events: none;
-        }
 
         #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
         #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
@@ -85,7 +77,7 @@
 
     <div id="bloqueo">
         <div class="status-box">
-            <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0; padding: 20px; color: white;">CONECTANDO AL BINGO...</h1>
+            <h1 id="bloqueo-status" style="font-size: 2.2rem; margin:0;">CONECTANDO AL BINGO...</h1>
         </div>
     </div>
 
@@ -95,10 +87,7 @@
         <div id="h-2" class="historial">--</div>
     </aside>
 
-    <main>
-        <div id="contador-pantalla">--</div>
-        <div class="grid-bingo" id="bingo-grid"></div>
-    </main>
+    <main><div class="grid-bingo" id="bingo-grid"></div></main>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -113,8 +102,8 @@
         let bolasEnJuego = new Set();
         let yaHuboLinea = false;
         let miMatriz = [];
-        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
 
+        // AL CARGAR, SI YA TENEMOS NOMBRE, OCULTAMOS REGISTRO
         window.onload = () => {
             if(miNombre) {
                 document.getElementById('pantalla-registro').style.display = 'none';
@@ -124,25 +113,39 @@
 
         function procesarEntrada() {
             const val = document.getElementById('input-nombre').value.trim().toUpperCase();
-            if(val.length < 2) return; 
+            if(val.length < 2) { alert("Nombre demasiado corto"); return; }
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
             document.getElementById('pantalla-registro').style.display = 'none';
+            
+            // Intentar poner pantalla completa (solo funciona tras clic de usuario)
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
+            
             iniciarConexionFirebase();
         }
 
+
+// 1. Asegúrate de que esta variable esté fuera de las funciones
+        let idPartidaActual = localStorage.getItem('id_partida_local') || 0;
+            
         function iniciarConexionFirebase() {
+            // Escuchamos el ID de la partida global
             db.ref('bingo/idPartida').on('value', snap => {
                 const idServidor = snap.val();
+                // Si el ID del servidor es distinto al que tenemos, reseteamos TODO
                 if (idServidor && idServidor != idPartidaActual) {
+                    console.log("Nueva partida detectada. Reseteando memoria...");
                     localStorage.clear(); 
+                    // Re-guardamos lo básico tras el clear
                     localStorage.setItem('aldea_uid', miId);
                     localStorage.setItem('aldea_nombre', miNombre);
+                    
+                    idPartidaActual = idServidor;
                     localStorage.setItem('id_partida_local', idServidor);
-                    window.location.reload(true); 
+                    miMatriz = []; 
+                    location.reload(); // Recargamos para limpiar la interfaz visualmente
                 }
             });
             
@@ -154,28 +157,16 @@
                     });
                 } else if(s.estado === "pendiente") {
                     document.getElementById('bloqueo').style.display = 'flex';
-                    document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><span style="font-size:1.2rem; color:#ccc;">Espera a que el Master te autorice.</span>`;
+                    document.getElementById('bloqueo-status').innerHTML = `HOLA ${s.nombre}<br><small>Espera a ser aceptado...</small>`;
                 } else if(s.estado === "autorizado") {
                     document.getElementById('bloqueo').style.display = 'none';
-                    if(document.getElementById('bingo-grid').children.length === 0) {
+                    if(miMatriz.length === 0) {
                         cargarJuego(); 
                     }
                 }
             });
 
-            db.ref('bingo/cuentaAtras').on('value', snap => {
-                const seg = snap.val();
-                const divContador = document.getElementById('contador-pantalla');
-                if (seg > 0) {
-                    divContador.innerText = seg;
-                    divContador.style.display = 'block';
-                    document.getElementById('bingo-grid').style.opacity = '0.2';
-                } else {
-                    divContador.style.display = 'none';
-                    document.getElementById('bingo-grid').style.opacity = '1';
-                }
-            });
-
+            // IMPORTANTE: Activar la escucha de bolas y premios
             escucharBolas();
         }
 
@@ -187,68 +178,34 @@
                 miMatriz = generarCarton();
                 localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
             }
+            // ¡ESTA LÍNEA ES VITAL! Sin ella el cartón no se ve
             dibujar(); 
         }
 
         function generarCarton() {
-            let matriz = Array.from({length: 4}, () => Array(8).fill(null));
-            
-            for (let f = 0; f < 4; f++) {
-                let celdasOcupadas = 0;
-                let intentosFila = 0;
-                while (celdasOcupadas < 5 && intentosFila < 100) {
-                    intentosFila++;
-                    let c = Math.floor(Math.random() * 8);
-                    if (matriz[f][c] === null) {
-                        // REGLA HORIZONTAL: No más de 2 juntos
-                        if (c > 1 && matriz[f][c-1] !== null && matriz[f][c-2] !== null) continue;
-                        if (c < 6 && matriz[f][c+1] !== null && matriz[f][c+2] !== null) continue;
-                        
-                        // REGLA VERTICAL: No más de 2 juntos
-                        if (f > 1 && matriz[f-1][c] !== null && matriz[f-2][c] !== null) continue;
-                        if (f < 2 && matriz[f+1][c] !== null && matriz[f+2][c] !== null) continue;
-
-                        matriz[f][c] = true; 
-                        celdasOcupadas++;
-                    }
-                }
-                // Si por azar no se logran 5, reiniciamos la generación completa
-                if (celdasOcupadas < 5) return generarCarton();
+            let m = Array.from({length: 4}, () => Array(8).fill(null));
+            for(let c = 0; c < 8; c++) {
+                let min = (c * 10) + 1; let max = (c * 10) + 10;
+                let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
+                let opcionesColumna = [];
+                for(let n = min; n <= max; n++) opcionesColumna.push(n);
+                let elegidos = opcionesColumna.sort(() => Math.random() - 0.5).slice(0, cantidadNumeros);
+                elegidos.sort((a, b) => a - b);
+                let filasDisponibles = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, cantidadNumeros).sort();
+                filasDisponibles.forEach((f, index) => { m[f][c] = elegidos[index]; });
             }
-
-            for (let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1;
-                let max = (c * 10) + 10;
-                let numerosCol = [];
-                for (let i = min; i <= max; i++) numerosCol.push(i);
-                numerosCol.sort(() => Math.random() - 0.5);
-
-                let vals = [];
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === true) vals.push(numerosCol.pop());
-                }
-                vals.sort((a, b) => a - b);
-                let vIdx = 0;
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === true) matriz[f][c] = vals[vIdx++];
-                }
-            }
-            return matriz;
+            return m;
         }
 
         function dibujar() {
-            const g = document.getElementById('bingo-grid'); 
-            g.innerHTML = "";
+            const g = document.getElementById('bingo-grid'); g.innerHTML = "";
             miMatriz.forEach((fila, fi) => {
                 fila.forEach((num, ci) => {
                     const d = document.createElement('div');
                     d.className = num ? 'cell' : 'cell empty';
-                    d.id = `c-${fi}-${ci}`; 
-                    d.innerText = num || "";
+                    d.id = `c-${fi}-${ci}`; d.innerText = num || "";
                     if(num) {
-                        if(localStorage.getItem(`m_${fi}_${ci}`)) {
-                            d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
-                        }
+                        if(localStorage.getItem(`m_${fi}_${ci}`)) d.classList.add(bolasEnJuego.has(num) ? 'marked-ok' : 'marked-error');
                         d.onclick = () => marcar(d, fi, ci, num);
                     }
                     g.appendChild(d);
@@ -273,19 +230,13 @@
                 const n = snap.val();
                 if(n && n !== 0) {
                     bolasEnJuego.add(n);
-                    const v = document.getElementById('bola-viva').innerText;
-                    const h1 = document.getElementById('h-1').innerText;
-                    if(n.toString() !== v) {
-                        document.getElementById('h-2').innerText = h1;
-                        document.getElementById('h-1').innerText = v;
-                        document.getElementById('bola-viva').innerText = n;
-                        document.querySelectorAll('.marked-error').forEach(c => {
-                            if(bolasEnJuego.has(parseInt(c.innerText))) { 
-                                c.classList.replace('marked-error', 'marked-ok'); 
-                            }
-                        });
-                        verificarPremios();
-                    }
+                    document.getElementById('h-2').innerText = document.getElementById('h-1').innerText;
+                    document.getElementById('h-1').innerText = document.getElementById('bola-viva').innerText;
+                    document.getElementById('bola-viva').innerText = n;
+                    document.querySelectorAll('.marked-error').forEach(c => {
+                        if(bolasEnJuego.has(parseInt(c.innerText))) { c.className = 'cell marked-ok'; }
+                    });
+                    verificarPremios();
                 }
             });
             db.ref('bingo/lineaCantada').on('value', snap => yaHuboLinea = snap.val());
@@ -298,23 +249,24 @@
             
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
+                // Enviamos aviso de BINGO con el nombre
                 db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
                     let ok = 0; let numEnFila = 0;
-                    let numerosLinea = []; 
+                    let numerosLinea = []; // Guardaremos los números para que el Master los vea
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
                             numEnFila++;
                             numerosLinea.push(miMatriz[f][c]);
-                            const el = document.getElementById(`c-${f}-${c}`);
-                            if(el && el.classList.contains('marked-ok')) ok++;
+                            if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
                         }
                     }
                     if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+                        // ENVIAMOS LA LÍNEA AL MASTER
                         db.ref('bingo/avisoPremio').set({ 
                             nombre: miNombre, 
                             tipo: "LINEA",
@@ -327,11 +279,11 @@
             }
         }
 
+        // PWA E INSTALACIÓN
         let promptInstalacion;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); promptInstalacion = e;
-            const btn = document.getElementById('btn-instalar-jugador');
-            if(btn) btn.style.display = 'block';
+            document.getElementById('btn-instalar-jugador').style.display = 'block';
         });
         async function instalarPWA() {
             if (promptInstalacion) {
@@ -343,3 +295,8 @@
     </script>
 </body>
 </html>
+
+
+
+
+
