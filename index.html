@@ -346,18 +346,44 @@
             }
         }
 
+
         let promptInstalacion;
+
+        // Escuchar el evento de instalación (Principalmente Android/Chrome)
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); promptInstalacion = e;
-            document.getElementById('btn-instalar-jugador').style.display = 'block';
+            // Evita que el navegador muestre su propio aviso para usar nuestro botón
+            e.preventDefault();
+            promptInstalacion = e;
+            // Mostramos el botón de instalar en la pantalla de registro
+            const btn = document.getElementById('btn-instalar-jugador');
+            if (btn) btn.style.display = 'block';
         });
+
         async function instalarPWA() {
+            // Si el navegador soporta el prompt automático (Android/PC)
             if (promptInstalacion) {
                 promptInstalacion.prompt();
                 const { outcome } = await promptInstalacion.userChoice;
-                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
+                if (outcome === 'accepted') {
+                    document.getElementById('btn-instalar-jugador').style.display = 'none';
+                    promptInstalacion = null;
+                }
+            } else {
+                // Si no hay prompt (iOS/Safari o ya instalado)
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    alert("Para instalar en iPhone:\n1. Pulsa el botón 'Compartir' (el cuadrado con la flecha).\n2. Selecciona 'Añadir a pantalla de inicio'.");
+                } else {
+                    alert("La aplicación ya está instalada o tu navegador no soporta la instalación directa.");
+                }
             }
         }
+
+        // Ocultar botón si la app ya se instaló correctamente
+        window.addEventListener('appinstalled', () => {
+            console.log('Bingo instalado correctamente');
+            document.getElementById('btn-instalar-jugador').style.display = 'none';
+        });
     </script>
 </body>
 </html>
