@@ -17,6 +17,7 @@
             color: white; margin: 0; padding: 5px; height: 100vh; width: 100vw; display: flex; overflow: hidden; 
         }
         
+        /* PANTALLA DE REGISTRO INTEGRADA */
         #pantalla-registro {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f0c29; z-index: 10000; display: flex; 
@@ -57,15 +58,12 @@
             justify-content: center; font-size: 2rem; font-weight: 800; border-radius: 8px; 
             box-shadow: 0 4px 0 #bdc3c7; 
         }
-        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
+        .cell.empty { background: rgba(255,255,255,0.05); box-shadow: none; }
         .cell.marked-ok { background: var(--win) !important; color: white; box-shadow: 0 4px 0 #27ae60; transform: translateY(2px); }
         .cell.marked-error { background: var(--fail) !important; color: white; box-shadow: 0 4px 0 #c0392b; transform: translateY(2px); }
 
         #bloqueo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #1e3c72; z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
-        #btn-instalar-jugador { 
-            position: absolute; bottom: 20px; background: var(--accent); color: white; 
-            border: none; padding: 15px; border-radius: 10px; display: block; z-index: 10001; 
-        }
+        #btn-instalar-jugador { position: absolute; bottom: 20px; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -94,17 +92,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // REGISTRO DEL SERVICE WORKER (NECESARIO PARA LA INSTALACIÓN)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('Service Worker registrado correctamente');
-                }).catch(err => {
-                    console.warn('Error al registrar el Service Worker', err);
-                });
-            });
-        }
-
         const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -129,14 +116,10 @@
             if(val.length < 2) { alert("Nombre demasiado corto"); return; }
             miNombre = val;
             localStorage.setItem('aldea_nombre', miNombre);
-            
-            // ESTO FUERZA LA PANTALLA COMPLETA AL HACER CLIC
-            const doc = document.documentElement;
-            if (doc.requestFullscreen) doc.requestFullscreen();
-            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-            else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
-        
             document.getElementById('pantalla-registro').style.display = 'none';
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
             iniciarConexionFirebase();
         }
 
@@ -202,74 +185,25 @@
             if(storage) {
                 miMatriz = JSON.parse(storage);
             } else {
-                miMatriz = generarCartonValido();
+                miMatriz = generarCarton();
                 localStorage.setItem('mi_carton_data', JSON.stringify(miMatriz));
             }
             dibujar(); 
         }
 
-        function generarCartonValido() {
-            let m;
-            let esValido = false;
-            let intentos = 0;
-            while (!esValido && intentos < 1000) {
-                intentos++;
-                m = Array.from({length: 4}, () => Array(8).fill(null));
-                for (let f = 0; f < 4; f++) {
-                    let indices = [0, 1, 2, 3, 4, 5, 6, 7].sort(() => Math.random() - 0.5);
-                    let huecosColocados = 0;
-                    for (let idx of indices) {
-                        if (huecosColocados < 3) {
-                            m[f][idx] = "NULL_MARKER";
-                            huecosColocados++;
-                        }
-                    }
-                }
-                esValido = validarReglasEspacios(m);
-            }
-            for (let c = 0; c < 8; c++) {
-                let min = (c * 10) + 1;
-                let max = (c * 10) + 10;
-                let numerosDisponibles = [];
-                for (let n = min; n <= max; n++) numerosDisponibles.push(n);
-                numerosDisponibles.sort(() => Math.random() - 0.5);
-                let numIdx = 0;
-                for (let f = 0; f < 4; f++) {
-                    if (m[f][c] !== "NULL_MARKER") {
-                        m[f][c] = numerosDisponibles[numIdx++];
-                    } else {
-                        m[f][c] = null;
-                    }
-                }
+        function generarCarton() {
+            let m = Array.from({length: 4}, () => Array(8).fill(null));
+            for(let c = 0; c < 8; c++) {
+                let min = (c * 10) + 1; let max = (c * 10) + 10;
+                let cantidadNumeros = Math.random() > 0.5 ? 3 : 2; 
+                let opcionesColumna = [];
+                for(let n = min; n <= max; n++) opcionesColumna.push(n);
+                let elegidos = opcionesColumna.sort(() => Math.random() - 0.5).slice(0, cantidadNumeros);
+                elegidos.sort((a, b) => a - b);
+                let filasDisponibles = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, cantidadNumeros).sort();
+                filasDisponibles.forEach((f, index) => { m[f][c] = elegidos[index]; });
             }
             return m;
-        }
-
-        function validarReglasEspacios(matriz) {
-            for (let f = 0; f < 4; f++) {
-                let consecutivos = 0;
-                for (let c = 0; c < 8; c++) {
-                    if (matriz[f][c] === "NULL_MARKER") consecutivos++;
-                    else consecutivos = 0;
-                    if (consecutivos > 2) return false;
-                }
-            }
-            for (let c = 0; c < 8; c++) {
-                let consecutivos = 0;
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === "NULL_MARKER") consecutivos++;
-                    else consecutivos = 0;
-                    if (consecutivos > 2) return false;
-                }
-            }
-            for (let c = 0; c < 8; c++) {
-                let nulosEnCol = 0;
-                for (let f = 0; f < 4; f++) {
-                    if (matriz[f][c] === "NULL_MARKER") nulosEnCol++;
-                }
-                if (nulosEnCol === 4) return false;
-            }
-            return true;
         }
 
         function dibujar() {
@@ -321,11 +255,13 @@
             let celdasVerdes = document.querySelectorAll('.marked-ok').length;
             let totalNumerosEnCarton = 0;
             miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
+            
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
                 db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
                 db.ref('bingo/estado').set("PAUSA_BINGO");
-            } else if(!yaHuboLinea) {
+            } 
+            else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
                     let ok = 0; let numEnFila = 0;
                     let numerosLinea = [];
@@ -338,7 +274,11 @@
                     }
                     if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-                        db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "LINEA", numeros: numerosLinea.join(", ") });
+                        db.ref('bingo/avisoPremio').set({ 
+                            nombre: miNombre, 
+                            tipo: "LINEA",
+                            numeros: numerosLinea.join(", ") 
+                        });
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
                     }
@@ -348,34 +288,16 @@
 
         let promptInstalacion;
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            promptInstalacion = e;
-            const btn = document.getElementById('btn-instalar-jugador');
-            if (btn) btn.style.display = 'block';
+            e.preventDefault(); promptInstalacion = e;
+            document.getElementById('btn-instalar-jugador').style.display = 'block';
         });
-
         async function instalarPWA() {
             if (promptInstalacion) {
                 promptInstalacion.prompt();
                 const { outcome } = await promptInstalacion.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('btn-instalar-jugador').style.display = 'none';
-                    promptInstalacion = null;
-                }
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) {
-                    alert("Para instalar en iPhone:\n1. Pulsa el botón 'Compartir' (el cuadrado con la flecha).\n2. Selecciona 'Añadir a pantalla de inicio'.");
-                } else {
-                    alert("La aplicación ya está instalada o tu navegador no soporta la instalación directa por este botón.");
-                }
+                if (outcome === 'accepted') document.getElementById('btn-instalar-jugador').style.display = 'none';
             }
         }
-
-        window.addEventListener('appinstalled', () => {
-            document.getElementById('btn-instalar-jugador').style.display = 'none';
-        });
     </script>
 </body>
 </html>
-
