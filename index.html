@@ -241,21 +241,32 @@
             let celdasVerdes = document.querySelectorAll('.marked-ok').length;
             let totalNumerosEnCarton = 0;
             miMatriz.forEach(f => f.forEach(c => { if(c) totalNumerosEnCarton++; }));
+            
             if(celdasVerdes === totalNumerosEnCarton && totalNumerosEnCarton > 0) {
                 if(navigator.vibrate) navigator.vibrate([500, 100, 500, 100, 1000]);
+                // Enviamos aviso de BINGO con el nombre
+                db.ref('bingo/avisoPremio').set({ nombre: miNombre, tipo: "BINGO" });
                 db.ref('bingo/estado').set("PAUSA_BINGO");
             } 
             else if(!yaHuboLinea) {
                 for(let f=0; f<4; f++) {
                     let ok = 0; let numEnFila = 0;
+                    let numerosLinea = []; // Guardaremos los números para que el Master los vea
                     for(let c=0; c<8; c++) {
                         if(miMatriz[f][c]) {
                             numEnFila++;
+                            numerosLinea.push(miMatriz[f][c]);
                             if(document.getElementById(`c-${f}-${c}`).classList.contains('marked-ok')) ok++;
                         }
                     }
                     if(ok === numEnFila && numEnFila > 0) {
                         if(navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+                        // ENVIAMOS LA LÍNEA AL MASTER
+                        db.ref('bingo/avisoPremio').set({ 
+                            nombre: miNombre, 
+                            tipo: "LINEA",
+                            numeros: numerosLinea.join(", ") 
+                        });
                         db.ref('bingo/estado').set("PAUSA_LINEA");
                         break;
                     }
@@ -279,3 +290,4 @@
     </script>
 </body>
 </html>
+
