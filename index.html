@@ -126,26 +126,35 @@
             iniciarConexionFirebase();
         }
 
-        function iniciarConexionFirebase() {
-            db.ref('bingo/solicitudes/' + miId).on('value', snap => {
-                const s = snap.val();
-                if(!s) {
-                    db.ref('bingo/solicitudes/' + miId).set({ 
-                        nombre: miNombre, 
-                        estado: "pendiente",
-                        fecha: Date.now() 
+            function iniciarConexionFirebase() {
+                    db.ref('bingo/solicitudes/' + miId).on('value', snap => {
+                        const s = snap.val();
+                        if(!s) {
+                            db.ref('bingo/solicitudes/' + miId).set({ 
+                                nombre: miNombre, 
+                                estado: "pendiente",
+                                fecha: Date.now() 
+                            });
+                        } else if(s.estado === "pendiente") {
+                            // Si el Master nos pone en pendiente (o acabamos de entrar), 
+                            // limpiamos datos de partidas viejas para estar listos
+                            localStorage.removeItem('mi_carton_data');
+                            for(let i=0; i<4; i++) for(let j=0; j<8; j++) localStorage.removeItem(`m_${i}_${j}`);
+                            miMatriz = []; 
+                            
+                            document.getElementById('bloqueo').style.display = 'flex';
+                            document.getElementById('bloqueo-status').innerHTML = `¡HOLA ${s.nombre}!<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
+                        } else if(s.estado === "autorizado") {
+                            document.getElementById('bloqueo').style.display = 'none';
+                            // Si no tenemos matriz (porque acabamos de ser aceptados), la generamos
+                            if(miMatriz.length === 0) {
+                                console.log("¡Autorizado! Generando nuevo cartón...");
+                                cargarJuego(); 
+                            }
+                        }
                     });
-                } else if(s.estado === "pendiente") {
-                    document.getElementById('bloqueo').style.display = 'flex';
-                    document.getElementById('bloqueo-status').innerHTML = `¡HOLA ${s.nombre}!<br><span style="font-size:1.2rem; color:#aaa;">Espera a que el Master te autorice.</span>`;
-                } else {
-                    document.getElementById('bloqueo').style.display = 'none';
-                    if(miMatriz.length === 0) cargarJuego();
                 }
-            });
-        }
 
-        // --- EL RESTO DEL CÓDIGO (ESTADO, JUEGO, DIBUJAR) SIGUE IGUAL ---
 
         db.ref('bingo/estado').on('value', snap => {
             const est = snap.val();
@@ -290,4 +299,5 @@
     </script>
 </body>
 </html>
+
 
