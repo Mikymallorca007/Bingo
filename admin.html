@@ -84,6 +84,7 @@
         }
         .btn-ok { background: var(--accent); color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0;}
         .btn-kick { background: var(--error); color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0; margin-left: 8px; }
+        .btn-clean { background: #636e72; color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0; margin-left: 8px; }
 
         .alerta { padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 1.3rem; display: none; }
         #aviso-linea { background: var(--error); color: white; border: 2px solid white; }
@@ -137,7 +138,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // REGISTRO SERVICE WORKER PARA PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
         }
@@ -191,28 +191,45 @@
             }, 1000);
         }
 
+        // LISTA DE JUGADORES MEJORADA CON FECHA Y BORRADO RÁPIDO
         db.ref('bingo/solicitudes').on('value', snap => {
             const list = document.getElementById('lista-espera');
             const badge = document.getElementById('badge-count');
-            list.innerHTML = ""; let count = 0;
+            list.innerHTML = ""; 
+            let count = 0;
             const data = snap.val();
+            
             if(data) {
-                Object.keys(data).forEach(uid => {
+                // Ordenamos para que los más recientes aparezcan arriba
+                const uids = Object.keys(data).sort((a,b) => (data[b].fecha || 0) - (data[a].fecha || 0));
+                
+                uids.forEach(uid => {
                     if(data[uid].estado === "pendiente") {
                         count++;
                         let row = document.createElement('div');
                         row.className = 'user-row';
-                        row.innerHTML = `<span>${data[uid].nombre}</span><div><button class="btn-ok" onclick="admitir('${uid}')">OK</button><button class="btn-kick" onclick="expulsar('${uid}')">X</button></div>`;
+                        row.innerHTML = `
+                            <span>${data[uid].nombre}</span>
+                            <div>
+                                <button class="btn-ok" onclick="admitir('${uid}')">OK</button>
+                                <button class="btn-clean" title="Limpiar duplicado" onclick="borrarRegistro('${uid}')">BORRAR</button>
+                                <button class="btn-kick" title="Expulsar definitivamente" onclick="expulsar('${uid}')">X</button>
+                            </div>`;
                         list.appendChild(row);
                     }
                 });
             }
-            badge.innerText = count; badge.style.display = count > 0 ? "block" : "none";
+            badge.innerText = count; 
+            badge.style.display = count > 0 ? "block" : "none";
         });
 
         function toggleAcceso() { const m = document.getElementById('modal-acceso'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
         function admitir(uid) { db.ref('bingo/solicitudes/' + uid).update({ estado: "autorizado" }); }
-        function expulsar(uid) { if(confirm("¿Expulsar?")) db.ref('bingo/solicitudes/' + uid).remove(); }
+        
+        // Función para limpiar registros duplicados sin preguntar
+        function borrarRegistro(uid) { db.ref('bingo/solicitudes/' + uid).remove(); }
+        
+        function expulsar(uid) { if(confirm("¿Expulsar definitivamente?")) db.ref('bingo/solicitudes/' + uid).remove(); }
 
         db.ref('bingo/estado').on('value', snap => {
             const est = snap.val();
@@ -245,7 +262,9 @@
         }
 
         function resolverPremio(esValido) {
-            if(esValido && document.getElementById('aviso-linea').style.display === 'block') db.ref('bingo/lineaCantada').set(true);
+            if(esValido && document.getElementById('aviso-linea').style.display === 'block') {
+                db.ref('bingo/lineaCantada').set(true);
+            }
             db.ref('bingo/estado').set("JUGANDO");
             document.querySelectorAll('.alerta').forEach(a => a.style.display = 'none');
             document.getElementById('zona-validacion').style.display = 'none';
@@ -254,12 +273,19 @@
         }
 
         function nuevaPartida() {
-            if(confirm("¿Resetear todo el Bingo?")) {
-                db.ref('bingo').set({
+            if(confirm("¿Resetear todo el Bingo? Esto obligará a los jugadores a generar cartones nuevos.")) {
+                // Detenemos cualquier timer activo
+                jugando = false;
+                clearTimeout(timerBingo);
+                
+                db.ref('bingo').update({
                     ultimaBola: 0,
                     estado: "ESPERANDO_INICIO",
                     lineaCantada: false
-                }).then(() => location.reload());
+                }).then(() => {
+                    // Recargamos el panel del Master para limpiar el tablero visualmente
+                    location.reload();
+                });
             }
         }
     </script>
