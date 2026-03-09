@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MASTER - Bingo Aldea Bella</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e272e">
+
+    <style>
+        :root { 
+            --bg: #1e272e; --panel: #2f3542; --accent: #2ecc71; 
+            --error: #e74c3c; --bingo: #f1c40f; --blue: #3498db; --text: #ffffff;
+        }
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: var(--bg); 
+            color: var(--text); margin: 0; display: flex; height: 100vh; width: 100vw; overflow: hidden; 
+        }
+        
+        aside { 
+            width: 280px; background: var(--panel); padding: 15px; display: flex; 
+            flex-direction: column; border-right: 2px solid #485460; align-items: center; flex-shrink: 0; 
+        }
+        
+        .bola-principal { 
+            width: 120px; height: 120px; background: white; color: var(--bg); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            font-size: 3.8rem; font-weight: 900; margin: 15px 0; border: 6px solid var(--accent); 
+            box-shadow: 0 0 25px rgba(46, 204, 113, 0.4); position: relative;
+        }
+
+        #count-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); border-radius: 50%; display: none;
+            align-items: center; justify-content: center; font-size: 4rem;
+            color: var(--bingo); z-index: 10; animation: pulse 0.5s infinite alternate;
+        }
+        
+        button { 
+            width: 100%; padding: 15px; margin-bottom: 10px; border: none; 
+            border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; 
+            transition: 0.2s;
+        }
+
+        .btn-play { background: var(--accent); color: white; }
+        .btn-stop { background: var(--error); color: white; }
+        .btn-access { background: var(--blue); color: white; position: relative; }
+        .badge { 
+            position: absolute; top: -8px; right: -8px; background: var(--error); 
+            color: white; padding: 6px 12px; border-radius: 50%; display: none; border: 2px solid white; 
+        }
+        .btn-reset { background: #ffa502; color: white; margin-top: auto; }
+        #btn-instalar-admin { display: none; background: #9b59b6; color: white; margin-bottom: 10px; }
+
+        main { flex-grow: 1; padding: 15px; display: flex; flex-direction: column; overflow: hidden; }
+        .grid-master { 
+            display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; 
+            background: #2f3542; padding: 15px; border-radius: 20px; flex-grow: 1; 
+        }
+        .num-slot { 
+            background: #485460; color: #a4b0be; display: flex; align-items: center; 
+            justify-content: center; border-radius: 8px; font-weight: bold; font-size: 1.3rem; 
+        }
+        .num-slot.out { background: var(--accent); color: white; transform: scale(1.05); box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
+
+        #modal-acceso { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 10000; 
+        }
+        .modal-content { 
+            background: #2f3542; width: 90%; max-width: 600px; max-height: 80vh; 
+            border-radius: 25px; padding: 25px; border: 3px solid var(--blue); 
+        }
+        .user-list { overflow-y: auto; margin-top: 20px; max-height: 50vh; }
+        .user-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #1e272e; padding: 12px 18px; margin-bottom: 10px; border-radius: 12px; 
+            font-size: 1.2rem;
+        }
+        .btn-ok { background: var(--accent); color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0;}
+        .btn-kick { background: var(--error); color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0; margin-left: 8px; }
+        .btn-clean { background: #636e72; color: white; padding: 8px 15px; border-radius: 8px; width: auto; margin:0; margin-left: 8px; }
+
+        .alerta { padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 1.1rem; display: none; }
+        #aviso-linea { background: var(--error); color: white; border: 2px solid white; }
+        #aviso-bingo { background: var(--bingo); color: #1e272e; border: 3px solid white; }
+        
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+
+    <div id="modal-acceso">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #485460; padding-bottom: 15px;">
+                <h2 style="margin:0; color:var(--blue)">GESTIÓN DE JUGADORES</h2>
+                <button style="width:auto; padding:8px 20px; background:#485460; margin:0;" onclick="toggleAcceso()">CERRAR</button>
+            </div>
+            <div id="lista-espera" class="user-list"></div>
+        </div>
+    </div>
+
+    <aside>
+        <h2 style="margin:0; color:var(--accent); font-size: 1.4rem;">ALDEA MASTER</h2>
+        <button id="btn-instalar-admin" onclick="instalarPWA()">⬇️ INSTALAR APP</button>
+        
+        <div id="aviso-linea" class="alerta">⚠️ LÍNEA: <br><span id="info-linea" style="font-size:1.4rem;"></span></div>        
+        <div id="aviso-bingo" class="alerta">🏆 BINGO: <br><span id="info-bingo" style="font-size:1.4rem;"></span> 🏆</div>
+
+        <div class="bola-principal">
+            <div id="count-overlay">10</div>
+            <span id="bola-actual">--</span>
+        </div>
+
+        <button id="btn-start" class="btn-play" onclick="comenzarPartida()">INICIAR BINGO</button>
+        
+        <div id="zona-validacion" style="display:none; width:100%;">
+            <button style="background:var(--accent); color:white;" onclick="resolverPremio(true)">✅ VALIDAR</button>
+            <button style="background:#e67e22; color:white;" onclick="resolverPremio(false)">❌ FALSO</button>
+        </div>
+
+        <button class="btn-access" onclick="toggleAcceso()">
+            👤 JUGADORES
+            <span id="badge-count" class="badge">0</span>
+        </button>
+
+        <button class="btn-reset" onclick="nuevaPartida()">NUEVA PARTIDA</button>
+    </aside>
+
+    <main><div class="grid-master" id="tabla-80"></div></main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+        }
+
+        let defferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); defferredPrompt = e;
+            document.getElementById('btn-instalar-admin').style.display = 'block';
+        });
+
+        async function instalarPWA() {
+            if (defferredPrompt) {
+                defferredPrompt.prompt();
+                const { outcome } = await defferredPrompt.userChoice;
+                if (outcome === 'accepted') document.getElementById('btn-instalar-admin').style.display = 'none';
+            }
+        }
+
+        const firebaseConfig = { apiKey: "AIzaSyCg8YWdMDcv5n1n84ywQr7-9O8ze6KiRJo", databaseURL: "https://bingoaldeabella-default-rtdb.europe-west1.firebasedatabase.app", projectId: "bingoaldeabella" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let bombo = Array.from({length: 80}, (_, i) => i + 1);
+        let jugando = false;
+        let timerBingo;
+
+        for(let i=1; i<=80; i++) {
+            let d = document.createElement('div');
+            d.className = 'num-slot'; d.id = 'n-' + i; d.innerText = i;
+            document.getElementById('tabla-80').appendChild(d);
+        }
+
+        function comenzarPartida() {
+            if (jugando) { toggleJuego(); return; }
+            let segundos = 10;
+            const overlay = document.getElementById('count-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('btn-start').disabled = true;
+
+            let countdown = setInterval(() => {
+                overlay.innerText = segundos;
+                db.ref('bingo/estado').set("CUENTA_" + segundos);
+                if (segundos === 0) {
+                    clearInterval(countdown);
+                    overlay.style.display = 'none';
+                    document.getElementById('btn-start').disabled = false;
+                    db.ref('bingo/estado').set("JUGANDO");
+                    toggleJuego();
+                }
+                segundos--;
+            }, 1000);
+        }
+
+        // LISTA DE JUGADORES CON LIMPIEZA TOTAL
+        db.ref('bingo/solicitudes').on('value', snap => {
+            const list = document.getElementById('lista-espera');
+            const badge = document.getElementById('badge-count');
+            list.innerHTML = ""; 
+            let count = 0;
+            const data = snap.val();
+            
+            if(data) {
+                const uids = Object.keys(data).sort((a,b) => (data[b].fecha || 0) - (data[a].fecha || 0));
+                
+                uids.forEach(uid => {
+                    if(data[uid].estado === "pendiente") count++;
+                    
+                    let row = document.createElement('div');
+                    row.className = 'user-row';
+                    const esPendi = data[uid].estado === "pendiente";
+                    row.style.borderLeft = esPendi ? "5px solid var(--blue)" : "5px solid var(--accent)";
+
+                    row.innerHTML = `
+                        <span>${data[uid].nombre} ${esPendi ? '' : '✅'}</span>
+                        <div>
+                            ${esPendi ? `<button class="btn-ok" onclick="admitir('${uid}')">OK</button>` : ''}
+                            <button class="btn-clean" title="Borrar duplicado" onclick="borrarRegistro('${uid}')">BORRAR</button>
+                            <button class="btn-kick" title="Expulsar" onclick="expulsar('${uid}')">X</button>
+                        </div>`;
+                    list.appendChild(row);
+                });
+            }
+            badge.innerText = count; 
+            badge.style.display = count > 0 ? "block" : "none";
+        });
+
+        function toggleAcceso() { const m = document.getElementById('modal-acceso'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
+        function admitir(uid) { db.ref('bingo/solicitudes/' + uid).update({ estado: "autorizado" }); }
+        function borrarRegistro(uid) { db.ref('bingo/solicitudes/' + uid).remove(); }
+        function expulsar(uid) { if(confirm("¿Expulsar a este jugador?")) db.ref('bingo/solicitudes/' + uid).remove(); }
+
+        // ESCUCHAR AVISOS DE PREMIO (NOMBRE Y NÚMEROS)
+        db.ref('bingo/avisoPremio').on('value', snap => {
+            const data = snap.val();
+            if(data) {
+                if(data.tipo === "LINEA") {
+                    document.getElementById('info-linea').innerText = `${data.nombre}\n[${data.numeros}]`;
+                } else {
+                    document.getElementById('info-bingo').innerText = data.nombre;
+                }
+            }
+        });
+
+        db.ref('bingo/estado').on('value', snap => {
+            const est = snap.val();
+            if(est === "PAUSA_LINEA") mostrarAviso('aviso-linea');
+            else if(est === "PAUSA_BINGO") mostrarAviso('aviso-bingo');
+        });
+
+        function toggleJuego() {
+            jugando = !jugando;
+            const btn = document.getElementById('btn-start');
+            btn.innerText = jugando ? "PAUSAR" : "CONTINUAR";
+            btn.className = jugando ? "btn-stop" : "btn-play";
+            if(jugando) cicloBola(); else clearTimeout(timerBingo);
+        }
+
+        function mostrarAviso(id) {
+            jugando = false; clearTimeout(timerBingo);
+            document.getElementById(id).style.display = 'block';
+            document.getElementById('zona-validacion').style.display = 'block';
+            document.getElementById('btn-start').style.display = 'none';
+        }
+
+        function cicloBola() {
+            if(!jugando || bombo.length === 0) return;
+            const num = bombo.splice(Math.floor(Math.random() * bombo.length), 1)[0];
+            document.getElementById('bola-actual').innerText = num;
+            document.getElementById('n-' + num).classList.add('out');
+            db.ref('bingo/ultimaBola').set(num);
+            timerBingo = setTimeout(cicloBola, 3000);
+        }
+
+        function resolverPremio(esValido) {
+            if(esValido && document.getElementById('aviso-linea').style.display === 'block') {
+                db.ref('bingo/lineaCantada').set(true);
+            }
+            // Limpiar avisos y restaurar juego
+            db.ref('bingo/avisoPremio').remove();
+            db.ref('bingo/estado').set("JUGANDO");
+            document.querySelectorAll('.alerta').forEach(a => a.style.display = 'none');
+            document.getElementById('zona-validacion').style.display = 'none';
+            document.getElementById('btn-start').style.display = 'block';
+            toggleJuego();
+        }
+
+
+
+        function nuevaPartida() {
+            if(confirm("¿Resetear todo el Bingo? Se borrarán jugadores y cartones.")) {
+                jugando = false;
+                clearTimeout(timerBingo);
+                
+                const nuevoIdPartida = Date.now();
+                
+                // Limpiamos solicitudes y premios
+                db.ref('bingo/solicitudes').remove();
+                db.ref('bingo/avisoPremio').remove();
+                db.ref('bingo/ultimaBola').set(0); // Seteamos a 0 explícitamente
+                
+                db.ref('bingo').update({
+                    estado: "ESPERANDO_INICIO",
+                    lineaCantada: false,
+                    idPartida: nuevoIdPartida 
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        }
+
+        
+    </script>
+</body>
+</html>
+
+
