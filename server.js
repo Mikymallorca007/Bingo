@@ -6,7 +6,12 @@ const fs = require('fs'); // NUEVO: Para persistencia
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 
 app.use(express.static('public'));
 
@@ -361,6 +366,5 @@ socket.on('SOLICITAR_INGRESO', (datos) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+    console.log(`Bingo Online listo en puerto ${PORT}`);
 });
