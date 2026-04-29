@@ -1,0 +1,10 @@
+{
+  "velocidad": 2000,
+  "jugarLinea": true,
+  "autoMarcado": true,
+  "precioPartida": 1.5,
+  "porcentajeLinea": 20,
+  "porcentajeBingo": 75,
+  "porcentajeCasa": 5,
+  "listaNegraIPs": []
+}

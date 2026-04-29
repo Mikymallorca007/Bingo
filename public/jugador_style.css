@@ -1,0 +1,320 @@
+/* ESTILO GENERAL - 100% ORIGINAL */
+body { 
+    font-family: 'Segoe UI', Roboto, sans-serif; 
+    margin: 0; 
+    background: #0f172a; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    /* BLOQUEO TOTAL DE ACTUALIZACIÓN */
+    overscroll-behavior-y: contain; 
+    overflow: hidden; 
+    height: 100vh;
+    width: 100vw;
+    position: fixed; 
+}
+
+/* --- CAMBIO: DISEÑO VIBRANTE DE SOLICITUD (MODIFICADO) --- */
+#espera { 
+    padding: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    height: 100vh;
+    width: 100%;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+}
+
+.card-ingreso {
+    background: #ffffff;
+    width: 100%;
+    max-width: 360px;
+    border-radius: 24px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ... (Estilos de body y #espera se mantienen) ... */
+
+.banner-bingo {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); /* Fondo oscuro para resaltar el oro */
+    padding: 40px 20px;
+    text-align: center;
+    border-radius: 24px 24px 0 0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.imagen-banner-bingo { 
+    display: block;
+    width: 220px; /* Tamaño ajustado y centrado */
+    height: auto;
+    margin: 0 auto 15px auto; 
+    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.5));
+    max-width: 85%;
+}
+
+.badge-aldea {
+    display: inline-block;
+    padding: 10px 0;
+    
+    /* Tamaño Grande */
+    font-size: 1.8rem; 
+    font-weight: 900;
+    letter-spacing: 4px;
+    
+    /* EFECTO LETRAS DORADAS (GRADIENTE METÁLICO) */
+    background: linear-gradient(
+        to bottom, 
+        #bf953f 0%, 
+        #fcf6ba 25%, 
+        #b38728 50%, 
+        #fbf5b7 75%, 
+        #aa771c 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #d4af37; /* Color de respaldo */
+    
+    /* Brillo sutil alrededor de las letras */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    text-transform: uppercase;
+}
+
+/* ... (El resto del CSS de premios y juego se mantiene 100% intacto) ... */
+
+.emoji-banner { font-size: 3.5rem; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2)); }
+.banner-bingo h2 { margin: 10px 0 0; letter-spacing: 4px; font-size: 2rem; font-weight: 900; }
+
+.cuerpo-ingreso { padding: 40px 30px; text-align: center; }
+
+.input-group label {
+    display: block;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.input-wrapper { position: relative; margin-bottom: 30px; }
+
+#nombre { 
+    padding: 18px; 
+    width: 100%; 
+    border: 2px solid #e2e8f0; 
+    border-radius: 16px; 
+    box-sizing: border-box;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.3s;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+#nombre:focus {
+    border-color: #f59e0b;
+    background: white;
+    outline: none;
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.1);
+}
+
+.btn-solicitar { 
+    padding: 20px; 
+    width: 100%;
+    background: #1e293b; 
+    color: #f59e0b; 
+    border: none; 
+    border-radius: 16px; 
+    font-weight: 900; 
+    font-size: 1rem;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.btn-solicitar:active { transform: scale(0.96); }
+
+.shimmer {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: skewX(-20deg);
+    animation: brilloBtn 3s infinite;
+}
+
+@keyframes brilloBtn {
+    0% { left: -100%; }
+    30% { left: 150%; }
+    100% { left: 150%; }
+}
+
+#mensaje-estado { 
+    margin-top: 20px; 
+    font-weight: 600;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+}
+
+.loader-peticion {
+    width: 30px;
+    height: 30px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #f59e0b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* --- FIN DEL CAMBIO VIBRANTE --- */
+
+/* RESTO DEL CÓDIGO - 100% ORIGINAL SIN TOCAR */
+#juego { 
+    display: none; 
+    width: 100%; 
+    max-width: 500px; 
+    padding: 10px; 
+    box-sizing: border-box; 
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* REFUERZO DE BLOQUEO EN EL ÁREA DE JUEGO */
+    overscroll-behavior-y: contain;
+}
+
+.header { 
+    background: #fff; 
+    padding: 15px; 
+    text-align: center; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+    margin-bottom: 15px; 
+    border-radius: 8px; 
+    box-sizing: border-box; 
+}
+
+.bola-actual { font-size: 3rem; color: #e74c3c; font-weight: bold; margin: 10px 0; }
+
+.bingo-header { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 100%; margin-bottom: 5px; }
+.letra-header { text-align: center; font-weight: bold; font-size: 1.5rem; color: #34495e; background: #ecf0f1; border-radius: 5px; padding: 5px 0; }
+
+.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; background: #fff; padding: 10px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.celda { background: #f8f9fa; border: 1px solid #dee2e6; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border-radius: 5px; cursor: pointer; }
+.marcado { background: #28a745 !important; color: white !important; }
+.error-flash { background: #ff4d4d !important; color: white !important; transition: 0.2s; }
+
+.premios-status { display: flex; gap: 15px; justify-content: center; margin-bottom: 10px; }
+.img-premio { width: 80px; height: 80px; object-fit: contain; }
+.mi-trofeo { filter: drop-shadow(0 0 8px #ffd700); transform: scale(1.1); transition: all 0.5s; }
+
+.aviso-ganador { 
+    background: #28a745; 
+    color: white; 
+    padding: 10px; 
+    text-align: center; 
+    font-weight: bold; 
+    border-radius: 5px; 
+    margin-bottom: 10px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+.tag-precio { background: #34495e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; }
+
+.contenedor-valores-premios {
+    display: flex;
+    justify-content: space-around;
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+}
+.bloque-premio span { display: block; font-size: 0.75rem; color: #7f8c8d; font-weight: bold; }
+.bloque-premio b { font-size: 1.2rem; color: #27ae60; }
+
+#overlay-cuenta {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 100;
+    border-radius: 10px;
+}
+#numero-cuenta {
+    font-size: 5rem;
+    font-weight: bold;
+    text-shadow: 0 0 20px #ffcc00;
+}
+
+.contenedor-titulo {
+    text-align: center;
+    background: linear-gradient(180deg, #f1c40f 0%, #f39c12 100%);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 0 #b7860b, 0 6px 10px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.linea-bingo {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: 8px;
+    line-height: 1;
+}
+
+.linea-aldea {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    opacity: 0.9;
+    border-top: 1px solid rgba(255,255,255,0.3);
+    padding-top: 5px;
+    margin-top: 5px;
+}
+
+.contenedor-titulo::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: skewX(-20deg);
+    animation: brilloTitulo 4s infinite;
+}
+
+@keyframes brilloTitulo {
+    0% { left: -100%; }
+    20% { left: 150%; }
+    100% { left: 150%; }
+}

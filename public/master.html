@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel MASTER - Bingo 50</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+
+        /* Estructura Base: Mantenemos todo, ajustamos el contenedor del tablero */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; display: flex; margin: 0; height: 100vh; overflow: hidden; }
+        
+        #panel-control { width: 350px; padding: 20px; background: #1e1e1e; border-right: 2px solid #333; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box; }
+        
+        /* AJUSTE FINAL: Padding derecho de 50px para liberar totalmente la columna 15 */
+        #tablero-container { 
+            flex-grow: 1; 
+            padding: 20px 50px 20px 20px; /* Superior 20, Derecha 50, Inferior 20, Izquierda 20 */
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            justify-content: space-between; 
+            box-sizing: border-box;
+        }
+        
+        /* Tablero: Mantenemos tus 15 columnas y tus 8px de gap */
+        #tablero { display: grid; grid-template-columns: repeat(15, 1fr); gap: 8px; width: 100%; }
+        
+        .bola { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1em; color: #666; }
+        .cantada { background: #ffcc00; color: black; border-color: #fff; transform: scale(1.05); }
+        .ultima { background: #ff4444 !important; color: white; animation: blink 1s infinite; border-color: #ffaaaa; }
+        
+        .jugador-card { background: #2a2a2a; padding: 10px; margin-bottom: 8px; border-radius: 5px; border-left: 5px solid #666; display: flex; justify-content: space-between; align-items: center; }
+        .autorizado { border-left-color: #28a745; }
+        .pendiente { border-left-color: #ffc107; }
+        
+        button { padding: 8px 12px; cursor: pointer; font-weight: bold; border: none; border-radius: 3px; }
+        
+        /* TUS BOTONES: 100% IDÉNTICOS */
+        .btn-start { background: #28a745; color: white; margin-bottom: 15px; font-size: 1.1em; width: 100%; }
+        .btn-pause { background: #f0ad4e; color: white; flex: 1; }
+        .btn-resume { background: #007bff; color: white; flex: 1; }
+        .btn-config { background: #555; color: white; flex: 1; } 
+        .btn-auth { background: #28a745; color: white; }
+        .btn-kick { background: #dc3545; color: white; }
+        .btn-reset { background: #6c757d; color: white; margin-top: auto; width: 100%; }
+        
+        #info-partida { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        @keyframes blink { 50% { opacity: 0.6; } }
+
+        .badge-progreso { font-size: 0.7em; padding: 2px 6px; border-radius: 10px; margin-top: 4px; display: block; width: fit-content; }
+        .casi-linea { background: #28a745; color: white; }
+        .casi-bingo { background: #ffcc00; color: black; }
+
+        .bote-container { 
+            background: #28a745; 
+            color: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            text-align: center; 
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+        #monto-bote { font-size: 2.2rem; font-weight: bold; display: block; margin: 0; }
+        .premios-fila {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 30px;
+        }
+        .dato-premio { font-size: 1.2rem; font-weight: bold; }
+        .dato-casa { font-size: 0.9rem; opacity: 0.9; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 20px; }
+  
+        .btn-start:disabled {
+            background: #444 !important;
+            color: #888 !important;
+            cursor: not-allowed;
+        }
+    </style>
+
+
+</head>
+<body>
+<div id="panel-control">
+    <h2>CONTROL MASTER</h2>
+    <div id="info-partida">
+        <div id="status">ESTADO: <b>ESPERANDO</b></div>
+        <div id="bolas-info">Bolas restantes: <b>75</b></div>
+    </div>
+    <button class="btn-start" onclick="iniciar()">🚀 INICIAR PARTIDA</button>
+    
+    <div style="display:flex; gap:5px; margin-bottom:10px;">
+        <button id="btn-toggle-pausa" class="btn-pause" onclick="togglePausa()">⏸️ PAUSAR</button>
+        <button class="btn-config" onclick="abrirConfiguracion()">⚙️ CONFIG</button>
+    </div>
+    
+    <hr>
+    <h3>JUGADORES</h3>
+    <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">
+            👥 <span id="count-jugadores">0</span>
+        </div>
+        <button onclick="window.open('/autorizar', 'BingoAuth', 'width=600,height=800')" 
+                style="background: #007bff; color: white; width: 100%; padding: 10px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer;">
+            GESTIONAR ENTRADAS
+        </button>
+    </div>
+    
+    <div id="lista-jugadores-resumen" style="margin-top: 10px; font-size: 0.8rem; color: #aaa;"></div>
+    
+    <hr>
+    <h3>PREMIOS CANTADOS</h3>
+    <div id="registro-premios" style="background: #000; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.9em; max-height: 150px; overflow-y: auto; border: 1px solid #444;">
+        <div style="color: #666;">Esperando premios...</div>
+    </div>
+
+    <button class="btn-reset" onclick="resetear()">🔄 RESET TOTAL</button>
+</div>
+
+<div id="tablero-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0;">TABLERO GENERAL</h3>
+        <h3 style="margin: 0;">ÚLTIMAS 5: <span id="historial" style="color: #ffcc00;">-</span></h3>
+    </div>
+    
+    <div id="tablero"></div>
+
+    <div class="bote-container">
+        <div>
+            <small style="opacity: 0.8;">BOTE TOTAL</small>
+            <span id="monto-bote">0.00€</span>
+        </div>
+        <div class="premios-fila">
+            <div><small>LÍNEA:</small> <span id="premio-linea" class="dato-premio">0.00€</span></div>
+            <div><small>BINGO:</small> <span id="premio-bingo" class="dato-premio">0.00€</span></div>
+        </div>
+        <div class="dato-casa">🏠 CASA: <span id="premio-casa">0.00€</span></div>
+    </div>
+</div>
+</div>
+
+<script>
+    const socket = io();
+    let partidaPausada = false;
+    let ultimaListaJugadores = [];
+
+    // --- VARIABLES DE CONFIGURACIÓN DE SERIE ---
+    let configActual = {
+        precioPartida: 0,
+        porcentajeLinea: 20,
+        porcentajeBingo: 75,
+        porcentajeCasa: 5
+    };
+
+    function crearTablero() {
+        const container = document.getElementById('tablero');
+        container.innerHTML = '';
+        for (let i = 1; i <= 75; i++) {
+            const div = document.createElement('div');
+            div.id = `bola-${i}`; div.className = 'bola'; div.innerText = i;
+            container.appendChild(div);
+        }
+    }
+    crearTablero();
+
+    // --- ACTUALIZACIÓN: LÓGICA DE CÁLCULO DE REPARTO ---
+    function actualizarBoteVisual() {
+        const autorizados = ultimaListaJugadores.filter(j => j.estado === 'autorizado').length;
+        const totalBote = autorizados * configActual.precioPartida;
+        
+        const valLinea = (totalBote * (configActual.porcentajeLinea / 100)).toFixed(2);
+        const valBingo = (totalBote * (configActual.porcentajeBingo / 100)).toFixed(2);
+        const valCasa = (totalBote * (configActual.porcentajeCasa / 100)).toFixed(2);
+
+        document.getElementById('monto-bote').innerText = `${totalBote.toFixed(2)}€`;
+        document.getElementById('premio-linea').innerText = `${valLinea}€`;
+        document.getElementById('premio-bingo').innerText = `${valBingo}€`;
+        document.getElementById('premio-casa').innerText = `${valCasa}€`;
+    }
+
+
+function iniciar() { 
+    const btn = document.querySelector('.btn-start');
+    btn.disabled = true; // Evita múltiples clics
+    btn.innerHTML = "⏳ ESPERANDO 10 SEG...";
+    
+    socket.emit('MASTER_INICIAR'); 
+}
+    
+    function togglePausa() {
+        if (partidaPausada) {
+            // Si queremos reanudar
+            const btn = document.getElementById('btn-toggle-pausa');
+            btn.disabled = true; // Bloqueamos el botón durante la cuenta atrás
+            
+            let segundos = 4;
+            // Mostramos el primer mensaje inmediatamente antes de entrar al interval
+            btn.innerText = `⏳ REANUDANDO EN ${segundos}...`;
+
+            const cuenta = setInterval(() => {
+                segundos--;
+                if (segundos >= 0) {
+                    btn.innerText = `⏳ REANUDANDO EN ${segundos}...`;
+                }
+                
+                if (segundos < 0) {
+                    clearInterval(cuenta);
+                    btn.disabled = false;
+                    // IMPORTANTE: Restablecemos el texto para que no se quede en 0
+                    btn.innerText = "⏸️ PAUSAR";
+                }
+            }, 1000);
+
+            socket.emit('MASTER_PAUSA', false); // Avisamos al servidor para que lance la cuenta global
+        } else {
+            // Pausa inmediata
+            socket.emit('MASTER_PAUSA', true);
+        }
+    }
+
+    function abrirConfiguracion() {
+        window.open('/configurar', 'BingoConfig', 'width=500,height=600');
+    }
+
+    function autorizar(id) { socket.emit('MASTER_AUTORIZAR', id); }
+    function expulsar(id) { socket.emit('MASTER_EXPULSAR', id); }
+    function resetear() { socket.emit('MASTER_RESET'); }
+
+    // --- ACTUALIZACIÓN: ESCUCHAR PORCENTAJES DINÁMICOS ---
+    socket.on('ACTUALIZAR_CONFIG_CLIENTE', (config) => {
+        if (config.precioPartida !== undefined) configActual.precioPartida = parseFloat(config.precioPartida);
+        if (config.porcentajeLinea !== undefined) configActual.porcentajeLinea = parseFloat(config.porcentajeLinea);
+        if (config.porcentajeBingo !== undefined) configActual.porcentajeBingo = parseFloat(config.porcentajeBingo);
+        if (config.porcentajeCasa !== undefined) configActual.porcentajeCasa = parseFloat(config.porcentajeCasa);
+        
+        actualizarBoteVisual();
+    });
+
+socket.on('ANUNCIO_PREMIO', (data) => {
+    const registro = document.getElementById('registro-premios');
+    if (registro.innerText.includes("Esperando")) registro.innerHTML = '';
+    const entrada = document.createElement('div');
+    entrada.style.marginBottom = "5px";
+    entrada.style.color = data.tipo === 'BINGO' ? '#ffcc00' : '#28a745';
+    
+    // EDITADO: Ahora muestra el tiempo transcurrido en lugar de la hora del sistema
+    entrada.innerHTML = `[${data.tiempo}] <strong>${data.tipo}</strong>: ${data.nombre}`;
+    
+    registro.prepend(entrada);
+});
+
+socket.on('LISTA_ESPERA_ACTUALIZADA', (jugadores) => {
+    ultimaListaJugadores = jugadores;
+    document.getElementById('count-jugadores').innerText = jugadores.length;
+    
+    actualizarBoteVisual();
+
+    const resumen = document.getElementById('lista-jugadores-resumen');
+    resumen.innerHTML = ''; // Limpiamos el contenedor y no añadimos nada nuevo
+    
+    const pendientes = jugadores.filter(j => j.estado === 'pendiente');
+    const btnGestionar = document.querySelector("button[onclick*='autorizar']");
+
+    if (pendientes.length > 0) {
+        // Mantenemos la alerta visual solo en el botón
+        if(btnGestionar) {
+            btnGestionar.innerHTML = `⚠️ APROBAR ENTRADAS (${pendientes.length})`;
+            btnGestionar.style.background = "#ff4444";
+            btnGestionar.style.animation = "blink 0.8s infinite";
+            btnGestionar.style.color = "white";
+        }
+    } else {
+        if(btnGestionar) {
+            btnGestionar.innerHTML = `GESTIONAR ENTRADAS`;
+            btnGestionar.style.background = "#007bff";
+            btnGestionar.style.animation = "none";
+            btnGestionar.style.color = "white";
+        }
+    }
+    
+    // Se ha eliminado por completo el bloque jugadores.forEach que dibujaba los nombres y los checks.
+});
+
+
+    socket.on('NUEVA_BOLA', (data) => {
+        document.querySelectorAll('.bola').forEach(b => b.classList.remove('ultima'));
+        const el = document.getElementById(`bola-${data.numero}`);
+        if(el) el.classList.add('cantada', 'ultima');
+        document.getElementById('historial').innerText = data.historial.join(' - ');
+        document.getElementById('bolas-info').innerHTML = `Bolas restantes: <b>${data.restantes}</b>`;
+    });
+
+socket.on('ESTADO_CAMBIADO', (fase) => {
+    document.getElementById('status').innerHTML = `ESTADO: <b>${fase.toUpperCase()}</b>`;
+    const btn = document.getElementById('btn-toggle-pausa');
+    const btnStart = document.querySelector('.btn-start'); 
+    
+    if (fase === 'pausada') {
+        // CORRECCIÓN AQUÍ: Sincronizamos la variable local
+        partidaPausada = true; 
+        btn.innerText = "▶️ REANUDAR";
+        btn.className = "btn-resume";
+
+        btnStart.disabled = true;
+        btnStart.style.opacity = "0.5";
+        btnStart.innerHTML = "⏸️ PARTIDA EN PAUSA";
+    } else if (fase === 'activa') {
+        // CORRECCIÓN AQUÍ: Sincronizamos la variable local
+        partidaPausada = false;
+        btn.innerText = "⏸️ PAUSAR";
+        btn.className = "btn-pause";
+
+        btnStart.disabled = true;
+        btnStart.style.opacity = "0.5";
+        btnStart.innerHTML = "🎮 PARTIDA EN CURSO";
+        }
+
+        if(fase === 'espera') {
+            crearTablero();
+            document.getElementById('historial').innerText = "-";
+            document.getElementById('bolas-info').innerHTML = `Bolas restantes: <b>75</b>`;
+            document.getElementById('monto-bote').innerText = "0.00€"; 
+            document.getElementById('registro-premios').innerHTML = '<div style="color: #666;">Esperando premios...</div>';
+            document.getElementById('lista-jugadores-resumen').innerHTML = '';
+
+            // DESBLOQUEO: Solo aquí el botón vuelve a ser funcional
+            btnStart.disabled = false;
+            btnStart.style.opacity = "1";
+            btnStart.innerHTML = "🚀 INICIAR PARTIDA";
+        }
+    });
+
+
+</script>
+</body>
+</html>

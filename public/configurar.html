@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración del Juego</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .opcion { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #555; }
+        label { display: block; margin-bottom: 10px; font-weight: bold; color: #aaa; }
+        select, input { width: 100%; padding: 10px; background: #333; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
+        .btn-guardar { background: #28a745; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-cerrar { background: #6c757d; color: white; border: none; padding: 8px; width: 100%; border-radius: 5px; cursor: pointer; margin-top: 10px; font-size: 0.8rem; }
+        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        /* Estilo para los mini-inputs de porcentajes */
+        .grid-premios { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .grid-premios div { text-align: center; }
+        .grid-premios label { font-size: 0.7rem; margin-bottom: 5px; color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>⚙️ Configuración General</h2>
+        
+        <div class="opcion">
+            <label>⏱️ Velocidad de bolas</label>
+            <select id="velocidad">
+                <option value="2000">Rápido (2s)</option>
+                <option value="3000" selected>Normal (3s)</option>
+                <option value="4000">Lento (4s)</option>
+                <option value="8000">Muy lento (8s)</option>
+            </select>
+        </div>
+
+        <div class="opcion">
+            <label>📏 Reglas de Premios</label>
+            <select id="jugarLinea">
+                <option value="true" selected>Habilitar LÍNEA y BINGO</option>
+                <option value="false">Solo BINGO (Partida rápida)</option>
+            </select>
+        </div>
+
+        <div class="opcion">
+            <label>🖱️ Modo de Marcado</label>
+            <select id="autoMarcado">
+                <option value="false" selected>Manual (El jugador marca)</option>
+                <option value="true">Automático (El sistema marca)</option>
+            </select>
+        </div>
+
+        <div class="opcion">
+            <label>💶 Precio y Reparto (%)</label>
+            <input type="number" id="precioPartida" step="0.50" min="0" value="0" placeholder="Precio (€)">
+            
+            <div class="grid-premios">
+                <div>
+                    <label>LÍNEA</label>
+                    <input type="number" id="porcentajeLinea" value="20" min="0" max="100">
+                </div>
+                <div>
+                    <label>BINGO</label>
+                    <input type="number" id="porcentajeBingo" value="75" min="0" max="100">
+                </div>
+                <div>
+                    <label>CASA</label>
+                    <input type="number" id="porcentajeCasa" value="5" min="0" max="100">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-guardar" onclick="guardarConfig()">APLICAR CAMBIOS</button>
+        <button class="btn-cerrar" onclick="window.close()">CERRAR VENTANA</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // --- ACTUALIZACIÓN: RECIBIR CONFIGURACIÓN ACTUAL DEL SERVIDOR ---
+        socket.on('ACTUALIZAR_CONFIG_CLIENTE', (config) => {
+            if (config.velocidad !== undefined) document.getElementById('velocidad').value = config.velocidad;
+            if (config.jugarLinea !== undefined) document.getElementById('jugarLinea').value = config.jugarLinea.toString();
+            if (config.autoMarcado !== undefined) document.getElementById('autoMarcado').value = config.autoMarcado.toString();
+            if (config.precioPartida !== undefined) document.getElementById('precioPartida').value = config.precioPartida;
+            if (config.porcentajeLinea !== undefined) document.getElementById('porcentajeLinea').value = config.porcentajeLinea;
+            if (config.porcentajeBingo !== undefined) document.getElementById('porcentajeBingo').value = config.porcentajeBingo;
+            if (config.porcentajeCasa !== undefined) document.getElementById('porcentajeCasa').value = config.porcentajeCasa;
+        });
+
+        function guardarConfig() {
+            const config = {
+                velocidad: document.getElementById('velocidad').value,
+                jugarLinea: document.getElementById('jugarLinea').value,
+                autoMarcado: document.getElementById('autoMarcado').value,
+                precioPartida: document.getElementById('precioPartida').value,
+                // NUEVOS VALORES DE REPARTO
+                porcentajeLinea: document.getElementById('porcentajeLinea').value,
+                porcentajeBingo: document.getElementById('porcentajeBingo').value,
+                porcentajeCasa: document.getElementById('porcentajeCasa').value
+            };
+            
+            socket.emit('MASTER_GUARDAR_CONFIG', config);
+            
+            const btn = document.querySelector('.btn-guardar');
+            const originalText = btn.innerText;
+            btn.innerText = "¡CONFIGURACIÓN APLICADA!";
+            btn.style.background = "#155724";
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#28a745";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

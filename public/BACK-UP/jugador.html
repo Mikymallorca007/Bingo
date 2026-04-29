@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bingo Jugador</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="jugador_style.css">
+</head>
+
+<div id="modal-confirmacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+        <h3 style="margin-top: 0; color: #34495e;">¿Salir del juego?</h3>
+        <p style="color: #7f8c8d; font-size: 0.9rem;">Deberás pedir entrada de nuevo para la próxima partida.</p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button onclick="cerrarModal()" style="background: #95a5a6; padding: 10px 20px; flex: 1;">CANCELAR</button>
+            <button onclick="ejecutarSalida()" style="background: #e74c3c; padding: 10px 20px; flex: 1;">SALIR</button>
+        </div>
+    </div>
+</div>
+
+<body>
+
+<div id="espera">
+    <h2>🎰 BINGO DIGITAL</h2>
+    <input type="text" id="nombre" placeholder="Tu Nombre" oninput="this.value = this.value.toUpperCase()">
+    <br>
+    <button onclick="solicitar()">PEDIR ENTRADA</button>
+    <p id="mensaje-estado" style="margin-top:20px; color:#666;"></p>
+</div>
+
+<div id="juego">
+    
+    <div class="contenedor-titulo" onclick="abrirModal()">
+        <div class="linea-bingo">BINGO</div>
+        <div class="linea-aldea">ALDEA BELLA</div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px;">
+        <div id="nombre-jugador-pantalla" style="font-weight: bold; color: #34495e; font-size: 1.2rem;"></div>
+        <div id="display-precio" class="tag-precio" style="display: none;">0.00€</div>
+    </div>
+
+    <div class="contenedor-valores-premios">
+        <div class="bloque-premio">
+            <span>PREMIO LÍNEA</span>
+            <b id="val-premio-linea">0.00€</b>
+        </div>
+        <div class="bloque-premio">
+            <span>PREMIO BINGO</span>
+            <b id="val-premio-bingo">0.00€</b>
+        </div>
+    </div>
+    
+    <div id="contenedor-aviso-premio"></div>
+
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 10px;">
+            <img id="status-linea" src="Linea_en_juego.jpg" class="img-premio" style="width: 70px; height: 70px; object-fit: contain;">
+            
+            <div>
+                <div style="font-size: 0.8rem; color: #7f8c8d;">BOLA ACTUAL</div>
+                <div class="bola-actual" id="bola-actual" style="margin: 5px 0;">--</div>
+            </div>
+
+            <img id="status-bingo" src="Bingo_en_juego.jpg" class="img-premio" style="width: 70px; height: 70px; object-fit: contain;">
+        </div>
+    </div>
+
+    <div style="background: #34495e; color: white; padding: 10px; border-radius: 10px 10px 0 0; text-align: center; margin-bottom: -5px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1);">
+        <div style="font-size: 0.7rem; opacity: 0.8; margin-bottom: 5px; font-weight: bold; letter-spacing: 1px;">ÚLTIMAS 5 BOLAS</div>
+        <div id="historial" style="font-size: 1.4rem; font-weight: bold; letter-spacing: 3px; color: #ffcc00;">-- -- -- -- --</div>
+    </div>
+
+    <div style="background: #fff; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative;">
+            
+        <div id="overlay-cuenta" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 100; border-radius: 10px;">
+            <div style="font-size: 1rem; margin-bottom: 10px; font-weight: bold; color: #ffcc00;">LA PARTIDA COMIENZA EN...</div>
+            <div id="numero-cuenta" style="font-size: 6rem; font-weight: bold; text-shadow: 0 0 20px #ffcc00;">10</div>
+        </div>
+
+        <div class="bingo-header">
+            <div class="letra-header">B</div>
+            <div class="letra-header">I</div>
+            <div class="letra-header">N</div>
+            <div class="letra-header">G</div>
+            <div class="letra-header">O</div>
+        </div>
+        <div class="grid" id="contenedor-carton"></div>
+    </div>
+</div>
+
+<script src="Jugador_script.js"></script>
+</body>
+</html>
