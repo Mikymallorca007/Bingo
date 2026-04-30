@@ -1,6 +1,10 @@
+// Sustituye la primera línea: const socket = io(); por esta:
 const socket = io({
     transports: ['websocket'],
-    upgrade: false
+    upgrade: false,
+    reconnection: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000
 });
 
 let bolasSalidas = new Set();
