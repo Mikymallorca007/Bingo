@@ -15,6 +15,8 @@ const io = new Server(server, {
 
 app.use(express.static('public'));
 
+// --- RUTAS ---
+app.get('/', (req, res) => { res.redirect('/jugar'); }); // <--- AÑADIDO AQUÍ
 app.get('/master', (req, res) => { res.sendFile(__dirname + '/public/master.html'); });
 app.get('/jugar', (req, res) => { res.sendFile(__dirname + '/public/jugador.html'); });
 app.get('/autorizar', (req, res) => { res.sendFile(__dirname + '/public/autorizar.html'); });
