@@ -1,4 +1,8 @@
-const socket = io();
+const socket = io({
+    transports: ['websocket'],
+    upgrade: false
+});
+
 let bolasSalidas = new Set();
 let yaCantoLinea = false;
 
@@ -35,14 +39,17 @@ function cantarTexto(texto) {
 
 
 
+
 function solicitar() {
     const n = document.getElementById('nombre').value.trim().toUpperCase();
-    if(!n) {
-        const msg = document.getElementById('mensaje-estado');
-        msg.innerText = "⚠️ ESCRIBE TU NOMBRE";
-        msg.style.color = "#ff4d4d";
-        return;
-    }
+    if(!n) return;
+
+    // Esto envía la señal al servidor
+    socket.emit('SOLICITAR_INGRESO', { nombre: n }); 
+    
+    // Cambia el mensaje para saber que el botón funcionó
+    document.getElementById('mensaje-estado').innerText = "ENVIANDO PETICIÓN...";
+}
 
     // --- NUEVO: Ocultar elementos estéticos del nuevo diseño ---
     document.querySelector('.input-group').style.display = 'none';
