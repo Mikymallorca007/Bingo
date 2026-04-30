@@ -313,3 +313,16 @@ socket.on('ESTADO_CAMBIADO', (fase) => {
         document.getElementById('contenedor-aviso-premio').innerHTML = '';
     }
 });
+
+socket.on('connect', () => {
+    alert("¡CONECTADO AL SERVIDOR!"); // Si sale este mensaje, el problema es el Master
+});
+
+socket.on('connect_error', (err) => {
+    alert("ERROR DE CONEXIÓN: " + err.message); // Si sale esto, es problema de Render/Puertos
+});
+
+
+
+
+
